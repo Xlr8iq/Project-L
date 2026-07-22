@@ -39,158 +39,159 @@ class PalmerChart extends StatelessWidget {
       builder: (context, provider, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
-            // Calculate tooth cell size based on available width
-            // 16 teeth + divider across the width, occupying ~80%
             final chartWidth = constraints.maxWidth * 0.92;
             final toothCellWidth = chartWidth / 17; // 16 teeth + 1 divider gap
-            final toothImageHeight = toothCellWidth * 1.8;
-            final bracketHeight = toothCellWidth * 0.7;
+            final toothImageHeight = toothCellWidth * 1.85;
+            final bracketHeight = toothCellWidth * 0.75;
+            final totalChartHeight = (bracketHeight * 2) + (toothImageHeight * 2) + 60;
 
             return SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-
-                  // ─── Quadrant Labels (Upper) ───
-                  SizedBox(
-                    width: chartWidth,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              'Upper Right',
-                              style: TextStyle(
-                                color: AppTheme.chartBlueAccent,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: SizedBox(
+                  width: chartWidth,
+                  height: totalChartHeight,
+                  child: Stack(
+                    children: [
+                      // ─── Background Cross Divider (Horizontal + Vertical) ───
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _CrossDividerPainter(
+                            midlineX: (toothCellWidth * 8) + (toothCellWidth / 2),
+                            midlineY: bracketHeight + toothImageHeight + 20,
                           ),
                         ),
-                        SizedBox(width: toothCellWidth), // gap for divider
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              'Upper Left',
-                              style: TextStyle(
-                                color: AppTheme.chartBlueAccent,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // ─── Upper Row: Brackets + Numbers ───
-                  SizedBox(
-                    width: chartWidth,
-                    child: Row(
-                      children: [
-                        // Upper Right brackets (Q1)
-                        ..._buildBracketRow(upperRight, provider, bracketHeight, toothCellWidth),
-                        SizedBox(width: toothCellWidth), // divider gap
-                        // Upper Left brackets (Q2)
-                        ..._buildBracketRow(upperLeft, provider, bracketHeight, toothCellWidth),
-                      ],
-                    ),
-                  ),
-
-                  // ─── Upper Row: Tooth Images ───
-                  SizedBox(
-                    width: chartWidth,
-                    child: Row(
-                      children: [
-                        ..._buildToothRow(upperRight, provider, toothImageHeight, toothCellWidth),
-                        SizedBox(width: toothCellWidth),
-                        ..._buildToothRow(upperLeft, provider, toothImageHeight, toothCellWidth),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // ─── Blue Divider Lines ───
-                  SizedBox(
-                    width: chartWidth,
-                    height: 3,
-                    child: CustomPaint(
-                      painter: _DividerPainter(
-                        dividerX: chartWidth / 2,
-                        aboveHeight: toothImageHeight + bracketHeight + 30,
-                        belowHeight: toothImageHeight + bracketHeight + 30,
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 4),
-
-                  // ─── Lower Row: Tooth Images ───
-                  SizedBox(
-                    width: chartWidth,
-                    child: Row(
-                      children: [
-                        ..._buildToothRow(lowerRight, provider, toothImageHeight, toothCellWidth),
-                        SizedBox(width: toothCellWidth),
-                        ..._buildToothRow(lowerLeft, provider, toothImageHeight, toothCellWidth),
-                      ],
-                    ),
-                  ),
-
-                  // ─── Lower Row: Brackets + Numbers ───
-                  SizedBox(
-                    width: chartWidth,
-                    child: Row(
-                      children: [
-                        ..._buildBracketRow(lowerRight, provider, bracketHeight, toothCellWidth),
-                        SizedBox(width: toothCellWidth),
-                        ..._buildBracketRow(lowerLeft, provider, bracketHeight, toothCellWidth),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // ─── Quadrant Labels (Lower) ───
-                  SizedBox(
-                    width: chartWidth,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              'Lower Right',
-                              style: TextStyle(
-                                color: AppTheme.chartBlueAccent,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
+                      // ─── Chart Content ───
+                      Column(
+                        children: [
+                          // Quadrant Labels (Upper)
+                          SizedBox(
+                            height: 20,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      'Upper Right',
+                                      style: TextStyle(
+                                        color: AppTheme.chartBlueAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: toothCellWidth), // center divider gap
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      'Upper Left',
+                                      style: TextStyle(
+                                        color: AppTheme.chartBlueAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        SizedBox(width: toothCellWidth),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              'Lower Left',
-                              style: TextStyle(
-                                color: AppTheme.chartBlueAccent,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
+
+                          const SizedBox(height: 4),
+
+                          // Upper Row: Brackets + Numbers
+                          SizedBox(
+                            height: bracketHeight,
+                            child: Row(
+                              children: [
+                                ..._buildBracketRow(upperRight, provider, bracketHeight, toothCellWidth),
+                                SizedBox(width: toothCellWidth),
+                                ..._buildBracketRow(upperLeft, provider, bracketHeight, toothCellWidth),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+
+                          // Upper Row: Tooth Images
+                          SizedBox(
+                            height: toothImageHeight,
+                            child: Row(
+                              children: [
+                                ..._buildToothRow(upperRight, provider, toothImageHeight, toothCellWidth),
+                                SizedBox(width: toothCellWidth),
+                                ..._buildToothRow(upperLeft, provider, toothImageHeight, toothCellWidth),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16), // Divider gap
+
+                          // Lower Row: Tooth Images
+                          SizedBox(
+                            height: toothImageHeight,
+                            child: Row(
+                              children: [
+                                ..._buildToothRow(lowerRight, provider, toothImageHeight, toothCellWidth),
+                                SizedBox(width: toothCellWidth),
+                                ..._buildToothRow(lowerLeft, provider, toothImageHeight, toothCellWidth),
+                              ],
+                            ),
+                          ),
+
+                          // Lower Row: Brackets + Numbers
+                          SizedBox(
+                            height: bracketHeight,
+                            child: Row(
+                              children: [
+                                ..._buildBracketRow(lowerRight, provider, bracketHeight, toothCellWidth),
+                                SizedBox(width: toothCellWidth),
+                                ..._buildBracketRow(lowerLeft, provider, bracketHeight, toothCellWidth),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // Quadrant Labels (Lower)
+                          SizedBox(
+                            height: 20,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      'Lower Right',
+                                      style: TextStyle(
+                                        color: AppTheme.chartBlueAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: toothCellWidth),
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      'Lower Left',
+                                      style: TextStyle(
+                                        color: AppTheme.chartBlueAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
             );
           },
@@ -253,33 +254,41 @@ class PalmerChart extends StatelessWidget {
   }
 }
 
-/// Draws the horizontal blue divider line across the full width
-class _DividerPainter extends CustomPainter {
-  final double dividerX;
-  final double aboveHeight;
-  final double belowHeight;
+/// Draws the continuous blue horizontal and vertical cross divider lines (3dp thick)
+class _CrossDividerPainter extends CustomPainter {
+  final double midlineX;
+  final double midlineY;
 
-  _DividerPainter({
-    required this.dividerX,
-    required this.aboveHeight,
-    required this.belowHeight,
+  _CrossDividerPainter({
+    required this.midlineX,
+    required this.midlineY,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = AppTheme.chartBlueAccent
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.square;
 
-    // Horizontal line
+    // Continuous Horizontal Divider Line
     canvas.drawLine(
-      Offset(0, size.height / 2),
-      Offset(size.width, size.height / 2),
+      Offset(0, midlineY),
+      Offset(size.width, midlineY),
+      paint,
+    );
+
+    // Continuous Vertical Divider Line
+    canvas.drawLine(
+      Offset(midlineX, 20),
+      Offset(midlineX, size.height - 20),
       paint,
     );
   }
 
   @override
-  bool shouldRepaint(covariant _DividerPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CrossDividerPainter oldDelegate) {
+    return oldDelegate.midlineX != midlineX || oldDelegate.midlineY != midlineY;
+  }
 }

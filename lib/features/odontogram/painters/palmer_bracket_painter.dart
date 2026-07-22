@@ -17,49 +17,47 @@ class PalmerBracketPainter extends CustomPainter {
     
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 1.5
+      ..strokeWidth = isSelected ? 2.2 : 1.8
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.square;
 
     final w = size.width;
     final h = size.height;
 
-    // Bracket dimensions
-    final bracketWidth = w * 0.6;
-    final bracketHeight = h * 0.6;
+    // Bracket leg dimensions
+    final bracketWidth = w * 0.55;
+    final bracketHeight = h * 0.55;
 
-    // Origin point for the bracket corner based on quadrant
     double cornerX = 0;
     double cornerY = 0;
     
-    // Draw lines
     final path = Path();
 
     switch (quadrant) {
-      case 1: // UR: ┘
-        cornerX = w;
-        cornerY = h;
+      case 1: // UR: ┘ (vertical line on right, horizontal line on bottom)
+        cornerX = w * 0.85;
+        cornerY = h * 0.85;
         path.moveTo(cornerX, cornerY - bracketHeight);
         path.lineTo(cornerX, cornerY);
         path.lineTo(cornerX - bracketWidth, cornerY);
         break;
-      case 2: // UL: └
-        cornerX = 0;
-        cornerY = h;
+      case 2: // UL: └ (vertical line on left, horizontal line on bottom)
+        cornerX = w * 0.15;
+        cornerY = h * 0.85;
         path.moveTo(cornerX, cornerY - bracketHeight);
         path.lineTo(cornerX, cornerY);
         path.lineTo(cornerX + bracketWidth, cornerY);
         break;
-      case 3: // LL: ┌
-        cornerX = 0;
-        cornerY = 0;
+      case 3: // LL: ┌ (vertical line on left, horizontal line on top)
+        cornerX = w * 0.15;
+        cornerY = h * 0.15;
         path.moveTo(cornerX, cornerY + bracketHeight);
         path.lineTo(cornerX, cornerY);
         path.lineTo(cornerX + bracketWidth, cornerY);
         break;
-      case 4: // LR: ┐
-        cornerX = w;
-        cornerY = 0;
+      case 4: // LR: ┐ (vertical line on right, horizontal line on top)
+        cornerX = w * 0.85;
+        cornerY = h * 0.15;
         path.moveTo(cornerX, cornerY + bracketHeight);
         path.lineTo(cornerX, cornerY);
         path.lineTo(cornerX - bracketWidth, cornerY);
@@ -68,11 +66,12 @@ class PalmerBracketPainter extends CustomPainter {
 
     canvas.drawPath(path, paint);
 
-    // Draw Palmer number
+    // Draw Palmer Number inside the open corner
     final textStyle = TextStyle(
       color: color,
-      fontSize: h * 0.4,
+      fontSize: h * 0.42,
       fontWeight: FontWeight.bold,
+      fontFamily: 'Inter',
     );
 
     final textSpan = TextSpan(
@@ -88,29 +87,27 @@ class PalmerBracketPainter extends CustomPainter {
 
     textPainter.layout();
 
-    // Position text inside the open corner of the bracket
     double textX = 0;
     double textY = 0;
 
-    final paddingX = w * 0.1;
-    final paddingY = h * 0.1;
+    const offsetPad = 4.0;
 
     switch (quadrant) {
-      case 1: // UR
-        textX = w - textPainter.width - paddingX;
-        textY = h - textPainter.height - paddingY;
+      case 1: // UR (Inside corner: left of vertical line, above horizontal line)
+        textX = cornerX - textPainter.width - offsetPad;
+        textY = cornerY - textPainter.height - offsetPad;
         break;
-      case 2: // UL
-        textX = paddingX;
-        textY = h - textPainter.height - paddingY;
+      case 2: // UL (Inside corner: right of vertical line, above horizontal line)
+        textX = cornerX + offsetPad;
+        textY = cornerY - textPainter.height - offsetPad;
         break;
-      case 3: // LL
-        textX = paddingX;
-        textY = paddingY;
+      case 3: // LL (Inside corner: right of vertical line, below horizontal line)
+        textX = cornerX + offsetPad;
+        textY = cornerY + offsetPad;
         break;
-      case 4: // LR
-        textX = w - textPainter.width - paddingX;
-        textY = paddingY;
+      case 4: // LR (Inside corner: left of vertical line, below horizontal line)
+        textX = cornerX - textPainter.width - offsetPad;
+        textY = cornerY + offsetPad;
         break;
     }
 
