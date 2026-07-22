@@ -21,14 +21,14 @@ class ToothDetailPanel extends StatelessWidget {
     final isSelected = tooth.procedure == type;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       onTap: () => provider.applyProcedure(type),
       child: Container(
-        width: 100,
-        height: 72,
+        width: 90,
+        height: 56,
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.primaryBlue.withOpacity(0.08) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? AppTheme.primaryBlue : const Color(0xFFE2E8F0),
             width: isSelected ? 2.0 : 1.0,
@@ -37,12 +37,12 @@ class ToothDetailPanel extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 6),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected ? AppTheme.primaryBlue : const Color(0xFF37474F),
               ),
@@ -286,8 +286,8 @@ class ToothDetailPanel extends StatelessWidget {
                                   }
                                 },
                                 child: Container(
-                                  width: 76,
-                                  height: 154,
+                                  width: 70,
+                                  height: 122,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
