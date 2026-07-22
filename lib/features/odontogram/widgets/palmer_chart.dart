@@ -43,7 +43,7 @@ class PalmerChart extends StatelessWidget {
             final toothCellWidth = chartWidth / 17; // 16 teeth + 1 divider gap
             final toothImageHeight = toothCellWidth * 1.85;
             final bracketHeight = toothCellWidth * 0.75;
-            final totalChartHeight = (bracketHeight * 2) + (toothImageHeight * 2) + 60;
+            final totalChartHeight = (bracketHeight * 2) + (toothImageHeight * 2) + 76;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(vertical: 12),
