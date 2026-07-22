@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
 import '../providers/odontogram_provider.dart';
-import '../widgets/interactive_jaw_image.dart';
-import '../widgets/clinical_sidebar.dart';
+import '../widgets/palmer_chart.dart';
+import '../widgets/tooth_detail_panel.dart';
 
 class ChartingScreen extends StatelessWidget {
   final Patient? patient;
@@ -22,69 +22,77 @@ class ChartingScreen extends StatelessWidget {
         return provider;
       },
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text(patient != null ? 'Charting: ${patient!.name}' : 'Clinical Charting'),
-          actions: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.save),
-              label: const Text('Save & Close'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accentCyan,
-                foregroundColor: Colors.black,
+          backgroundColor: AppTheme.chartBlueAccent,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                patient != null ? 'Clinical Dental Chart' : 'Clinical Dental Chart',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              Text(
+                patient != null
+                    ? 'Palmer Notation • ${patient!.name}'
+                    : 'Palmer Notation • Select a tooth',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.85),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.fullscreen, color: Colors.white),
+              onPressed: () {},
+              tooltip: 'Fullscreen',
             ),
-            const SizedBox(width: 16),
+            IconButton(
+              icon: const Icon(Icons.zoom_in, color: Colors.white),
+              onPressed: () {},
+              tooltip: 'Zoom In',
+            ),
+            IconButton(
+              icon: const Icon(Icons.zoom_out, color: Colors.white),
+              onPressed: () {},
+              tooltip: 'Zoom Out',
+            ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              onSelected: (value) {
+                if (value == 'save') {
+                  Navigator.pop(context);
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'save', child: Text('Save & Close')),
+              ],
+            ),
           ],
         ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final isDesktop = constraints.maxWidth > 800;
-            
-            if (isDesktop) {
-              return Row(
-                children: [
-                  const Expanded(
-                    flex: 3,
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: InteractiveJawImage(),
-                    ),
-                  ),
-                  Container(width: 1, color: AppTheme.surfaceDark),
-                  const Expanded(
-                    flex: 1,
-                    child: Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: ClinicalSidebar(),
-                    ),
-                  ),
-                ],
-              );
-            }
-            
-            return Column(
-              children: [
-                const Expanded(
-                  flex: 2,
-                  child: Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: InteractiveJawImage(),
-                  ),
+        body: Column(
+          children: [
+            // ─── Main Chart Area ───
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: const PalmerChart(),
                 ),
-                Container(height: 1, color: AppTheme.surfaceDark),
-                const Expanded(
-                  flex: 1,
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: ClinicalSidebar(),
-                  ),
-                ),
-              ],
-            );
-          },
+              ),
+            ),
+
+            // ─── Tooth Detail Panel (bottom) ───
+            const ToothDetailPanel(),
+          ],
         ),
       ),
     );

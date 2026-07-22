@@ -6,7 +6,9 @@ import '../../odontogram/screens/charting_screen.dart';
 import '../../appointments/screens/add_appointment_screen.dart';
 import '../../appointments/screens/appointments_calendar_view.dart';
 import '../../patients/screens/patient_profile_screen.dart';
+import '../../settings/screens/settings_screen.dart';
 import '../providers/clinic_provider.dart';
+import '../providers/settings_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -21,19 +23,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: color.withOpacity(0.2),
-              child: Icon(icon, color: color),
+              radius: 24,
+              backgroundColor: color.withOpacity(0.12),
+              child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(width: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: AppTheme.textSecondary)),
-                Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
               ],
             ),
           ],
@@ -43,8 +61,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildOverview() {
-    return Consumer<ClinicProvider>(
-      builder: (context, provider, child) {
+    return Consumer2<ClinicProvider, SettingsProvider>(
+      builder: (context, provider, settings, child) {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -59,27 +77,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Overview', style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                settings.translate('Overview'),
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(child: _buildStatCard('Total Patients', '${provider.patients.length}', Icons.people, Colors.blue)),
+                  Expanded(
+                    child: _buildStatCard(
+                      settings.translate('Total Patients'),
+                      '${provider.patients.length}',
+                      Icons.people,
+                      AppTheme.primaryBlue,
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildStatCard('Today\'s Appointments', '${todayAppointments.length}', Icons.calendar_today, Colors.orange)),
+                  Expanded(
+                    child: _buildStatCard(
+                      settings.translate('Today\'s Appointments'),
+                      '${todayAppointments.length}',
+                      Icons.calendar_today,
+                      Colors.orange.shade700,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Today\'s Appointments', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    settings.translate('Today\'s Appointments'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: const Text('New Appointment'),
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: Text(settings.translate('New Appointment')),
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAppointmentScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddAppointmentScreen()),
+                      );
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentCyan, foregroundColor: Colors.black),
                   ),
                 ],
               ),
@@ -87,36 +127,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(
                 child: Card(
                   child: todayAppointments.isEmpty 
-                    ? const Center(child: Text('No appointments scheduled for today.'))
+                    ? Center(
+                        child: Text(
+                          settings.translate('No appointments scheduled for today.'),
+                          style: const TextStyle(color: AppTheme.textSecondary),
+                        ),
+                      )
                     : ListView.separated(
-                    itemCount: todayAppointments.length,
-                    separatorBuilder: (context, index) => const Divider(color: AppTheme.backgroundDark, height: 1),
-                    itemBuilder: (context, index) {
-                      final appointment = todayAppointments[index];
-                      final patient = provider.getPatientById(appointment.patientId);
-                      if (patient == null) return const SizedBox.shrink();
+                        itemCount: todayAppointments.length,
+                        separatorBuilder: (context, index) => const Divider(color: AppTheme.borderLight, height: 1),
+                        itemBuilder: (context, index) {
+                          final appointment = todayAppointments[index];
+                          final patient = provider.getPatientById(appointment.patientId);
+                          if (patient == null) return const SizedBox.shrink();
 
-                      return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(color: AppTheme.backgroundDark, borderRadius: BorderRadius.circular(8)),
-                          child: Text(DateFormat('hh:mm a').format(appointment.dateTime), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.accentCyan)),
-                        ),
-                        title: Text(patient.name),
-                        subtitle: Text(appointment.notes.isNotEmpty ? appointment.notes : 'Check-up'),
-                        trailing: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accentCyan.withOpacity(0.2),
-                            foregroundColor: AppTheme.accentCyan,
-                          ),
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => ChartingScreen(patient: patient)));
-                          },
-                          child: const Text('Open Chart'),
-                        ),
-                      );
-                    },
-                  ),
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            leading: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                DateFormat('hh:mm a').format(appointment.dateTime),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryBlue,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              patient.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            subtitle: Text(
+                              appointment.notes.isNotEmpty ? appointment.notes : settings.translate('Check-up'),
+                              style: const TextStyle(color: AppTheme.textSecondary),
+                            ),
+                            trailing: OutlinedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => ChartingScreen(patient: patient)),
+                                );
+                              },
+                              child: Text(settings.translate('Open Chart')),
+                            ),
+                          );
+                        },
+                      ),
                 ),
               ),
             ],
@@ -135,24 +198,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSettings() {
-    return Center(
-      child: Text(
-        'Settings\n(Coming Soon)', 
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.textSecondary)
-      ),
-    );
+    return const SettingsScreen();
   }
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dental Clinic Dashboard'),
+        title: Text(settings.translate('Dental Clinic')),
         actions: [
           IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
           const SizedBox(width: 16),
-          const CircleAvatar(backgroundColor: AppTheme.surfaceDark, child: Icon(Icons.person, color: AppTheme.accentCyan)),
+          CircleAvatar(
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: const Icon(Icons.person, color: Colors.white),
+          ),
           const SizedBox(width: 16),
         ],
       ),
@@ -160,7 +221,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           // Sidebar Nav for Desktop
           NavigationRail(
-            backgroundColor: AppTheme.surfaceDark,
+            backgroundColor: Colors.white,
             selectedIndex: _selectedIndex,
             onDestinationSelected: (int index) {
               setState(() {
@@ -168,16 +229,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               });
             },
             labelType: NavigationRailLabelType.all,
-            selectedIconTheme: const IconThemeData(color: AppTheme.accentCyan),
-            selectedLabelTextStyle: const TextStyle(color: AppTheme.accentCyan),
-            unselectedLabelTextStyle: const TextStyle(color: AppTheme.textSecondary),
-            destinations: const [
-              NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Dashboard')),
-              NavigationRailDestination(icon: Icon(Icons.calendar_today), label: Text('Appointments')),
-              NavigationRailDestination(icon: Icon(Icons.people), label: Text('Patients')),
-              NavigationRailDestination(icon: Icon(Icons.settings), label: Text('Settings')),
+            destinations: [
+              NavigationRailDestination(icon: const Icon(Icons.dashboard), label: Text(settings.translate('Overview'))),
+              NavigationRailDestination(icon: const Icon(Icons.calendar_today), label: Text(settings.translate('Appointments'))),
+              NavigationRailDestination(icon: const Icon(Icons.people), label: Text(settings.translate('Patients'))),
+              NavigationRailDestination(icon: const Icon(Icons.settings), label: Text(settings.translate('Settings'))),
             ],
           ),
+          const VerticalDivider(width: 1, color: AppTheme.borderLight),
           Expanded(
             child: IndexedStack(
               index: _selectedIndex,
@@ -207,6 +266,7 @@ class _PatientDatabaseTabState extends State<_PatientDatabaseTab> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
     return Consumer<ClinicProvider>(
       builder: (context, provider, child) {
         final filteredPatients = provider.patients.where((p) {
@@ -221,16 +281,16 @@ class _PatientDatabaseTabState extends State<_PatientDatabaseTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Patient Database', style: Theme.of(context).textTheme.headlineMedium),
+                  Text(
+                    settings.translate('Patient Database'),
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   SizedBox(
                     width: 300,
                     child: TextField(
                       decoration: InputDecoration(
-                        hintText: 'Search patients...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: AppTheme.surfaceDark,
+                        hintText: settings.translate('Search patients...'),
+                        prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
                       ),
                       onChanged: (val) => setState(() => _searchQuery = val),
                     ),
@@ -240,38 +300,65 @@ class _PatientDatabaseTabState extends State<_PatientDatabaseTab> {
               const SizedBox(height: 24),
               Expanded(
                 child: filteredPatients.isEmpty 
-                  ? const Center(child: Text('No patients found.'))
-                  : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 300,
-                    childAspectRatio: 3 / 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: filteredPatients.length,
-                  itemBuilder: (context, index) {
-                    final patient = filteredPatients[index];
-                    return Card(
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => PatientProfileScreen(patient: patient)));
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const CircleAvatar(radius: 32, backgroundColor: AppTheme.backgroundDark, child: Icon(Icons.person, size: 32, color: AppTheme.accentCyan)),
-                              const SizedBox(height: 12),
-                              Text(patient.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text('${patient.age} y/o • ${patient.gender}', style: const TextStyle(color: AppTheme.textSecondary)),
-                            ],
-                          ),
-                        ),
+                  ? Center(
+                      child: Text(
+                        settings.translate('No patients found.'),
+                        style: const TextStyle(color: AppTheme.textSecondary),
                       ),
-                    );
-                  },
-                ),
+                    )
+                  : GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 300,
+                        childAspectRatio: 3 / 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: filteredPatients.length,
+                      itemBuilder: (context, index) {
+                        final patient = filteredPatients[index];
+                        return Card(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => PatientProfileScreen(patient: patient)),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+                                    child: const Icon(Icons.person, size: 28, color: AppTheme.primaryBlue),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    patient.name,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${patient.age} y/o • ${patient.gender}',
+                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
               ),
             ],
           ),
@@ -280,4 +367,3 @@ class _PatientDatabaseTabState extends State<_PatientDatabaseTab> {
     );
   }
 }
-

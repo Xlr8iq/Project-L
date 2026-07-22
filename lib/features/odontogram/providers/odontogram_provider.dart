@@ -19,6 +19,25 @@ class OdontogramProvider extends ChangeNotifier {
   int? _selectedTooth;
   int? get selectedTooth => _selectedTooth;
 
+  // ─── Surface Selection ───
+  final Set<Surface> _selectedSurfaces = {};
+  Set<Surface> get selectedSurfaces => Set.unmodifiable(_selectedSurfaces);
+
+  void toggleSurface(Surface surface) {
+    if (_selectedSurfaces.contains(surface)) {
+      _selectedSurfaces.remove(surface);
+    } else {
+      _selectedSurfaces.add(surface);
+    }
+    notifyListeners();
+  }
+
+  void clearSurfaces() {
+    _selectedSurfaces.clear();
+    notifyListeners();
+  }
+
+  // ─── Chart Loading ───
   Future<void> loadChart(int patientId) async {
     this.patientId = patientId;
     if (!kIsWeb) {
@@ -34,15 +53,18 @@ class OdontogramProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Tooth Selection ───
   void selectTooth(int number) {
     if (_selectedTooth == number) {
-      _selectedTooth = null; // Deselect if tapped again
+      _selectedTooth = null;
     } else {
       _selectedTooth = number;
+      _selectedSurfaces.clear(); // Clear surfaces when switching teeth
     }
     notifyListeners();
   }
 
+  // ─── Procedure ───
   Future<void> applyProcedure(ProcedureType type) async {
     if (_selectedTooth != null) {
       _teeth[_selectedTooth!] = _teeth[_selectedTooth!]!.copyWith(procedure: type);

@@ -6,6 +6,8 @@ import '../../../core/models/appointment.dart';
 import '../../../core/models/patient.dart';
 import '../../dashboard/providers/clinic_provider.dart';
 import '../../odontogram/screens/charting_screen.dart';
+import '../../../core/utils/pdf_generator.dart';
+import '../../dashboard/providers/settings_provider.dart';
 
 class AppointmentsCalendarView extends StatefulWidget {
   const AppointmentsCalendarView({Key? key}) : super(key: key);
@@ -16,10 +18,16 @@ class AppointmentsCalendarView extends StatefulWidget {
 
 class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
   DateTime _selectedDate = DateTime.now();
+  late DateTime _baseDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _baseDate = DateTime.now();
+  }
 
   List<DateTime> _generateDays() {
-    final today = DateTime.now();
-    return List.generate(30, (index) => today.add(Duration(days: index - 15)));
+    return List.generate(30, (index) => _baseDate.add(Duration(days: index - 15)));
   }
 
   void _showAppointmentDetails(BuildContext context, Appointment appointment, Patient patient) {
@@ -31,16 +39,55 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
     );
   }
 
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryBlue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppTheme.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _baseDate = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final days = _generateDays();
+    final settings = context.watch<SettingsProvider>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Text('Calendar', style: Theme.of(context).textTheme.headlineMedium),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(settings.translate('Calendar'), style: Theme.of(context).textTheme.headlineMedium),
+              IconButton(
+                icon: const Icon(Icons.calendar_month, color: AppTheme.primaryBlue),
+                onPressed: _pickDate,
+                tooltip: 'Select Month/Day',
+              ),
+            ],
+          ),
         ),
         
         // Horizontal Date Selector
@@ -57,23 +104,49 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
               return GestureDetector(
                 onTap: () => setState(() => _selectedDate = date),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 200),
                   width: 70,
                   margin: EdgeInsets.only(left: index == 0 ? 24 : 8, right: index == days.length - 1 ? 24 : 8, top: 8, bottom: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.accentCyan : AppTheme.surfaceDark,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isToday && !isSelected ? AppTheme.accentCyan : Colors.transparent, width: 2),
-                    boxShadow: isSelected ? [BoxShadow(color: AppTheme.accentCyan.withOpacity(0.3), blurRadius: 8, spreadRadius: 2)] : [],
+                    color: isSelected ? AppTheme.primaryBlue : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isToday && !isSelected ? AppTheme.primaryBlue : AppTheme.borderLight,
+                      width: isToday && !isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [BoxShadow(color: AppTheme.primaryBlue.withOpacity(0.25), blurRadius: 8, spreadRadius: 1)]
+                        : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4)],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(DateFormat('MMM').format(date).toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? Colors.black54 : Colors.white54)),
+                      Text(
+                        DateFormat('MMM').format(date).toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white70 : AppTheme.textSecondary,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(DateFormat('d').format(date), style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isSelected ? Colors.black : Colors.white)),
+                      Text(
+                        DateFormat('d').format(date),
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : AppTheme.textPrimary,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(DateFormat('E').format(date), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? Colors.black54 : Colors.white54)),
+                      Text(
+                        DateFormat('E').format(date),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white70 : AppTheme.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -92,43 +165,46 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
 
               if (dailyAppointments.isEmpty) {
                 return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.event_busy, size: 64, color: Colors.white24),
-                      const SizedBox(height: 16),
-                      Text('No appointments for this date.', style: TextStyle(color: Colors.white54, fontSize: 18)),
-                    ],
+                  child: Text(
+                    settings.translate('No appointments for this date.'),
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
                   ),
                 );
               }
 
-              return ListView.separated(
+              return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 itemCount: dailyAppointments.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final appointment = dailyAppointments[index];
                   final patient = provider.getPatientById(appointment.patientId);
                   if (patient == null) return const SizedBox.shrink();
 
                   return Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppTheme.backgroundDark)),
+                    margin: const EdgeInsets.only(bottom: 16.0),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       onTap: () => _showAppointmentDetails(context, appointment, patient),
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(20.0),
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(color: AppTheme.backgroundDark, borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: Column(
                                 children: [
-                                  Text(DateFormat('hh:mm').format(appointment.dateTime), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.accentCyan)),
-                                  Text(DateFormat('a').format(appointment.dateTime), style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                                  Text(
+                                    DateFormat('hh:mm').format(appointment.dateTime),
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                                  ),
+                                  Text(
+                                    DateFormat('a').format(appointment.dateTime),
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                                  ),
                                 ],
                               ),
                             ),
@@ -137,26 +213,48 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(patient.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  Text(
+                                    patient.name,
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                                  ),
                                   const SizedBox(height: 4),
-                                  Text(appointment.notes.isNotEmpty ? appointment.notes : 'General Checkup', style: const TextStyle(color: Colors.white70)),
+                                  Text(
+                                    appointment.notes.isNotEmpty ? appointment.notes : settings.translate('General Checkup'),
+                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                                  ),
                                 ],
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: appointment.status == 'Completed' ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                appointment.status,
-                                style: TextStyle(
-                                  color: appointment.status == 'Completed' ? Colors.green : Colors.orange,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: appointment.status == 'Completed' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    settings.translate(appointment.status),
+                                    style: TextStyle(
+                                      color: appointment.status == 'Completed' ? Colors.green.shade700 : Colors.orange.shade800,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                  icon: const Icon(Icons.print, size: 16),
+                                  label: Text(settings.translate('Print Rx'), style: const TextStyle(fontSize: 12)),
+                                  onPressed: () {
+                                    PdfGenerator.printPrescription(patient: patient, appointment: appointment, settings: settings);
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -177,7 +275,7 @@ class _AppointmentDetailModal extends StatefulWidget {
   final Appointment appointment;
   final Patient patient;
 
-  const _AppointmentDetailModal({required this.appointment, required this.patient});
+  const _AppointmentDetailModal({Key? key, required this.appointment, required this.patient}) : super(key: key);
 
   @override
   State<_AppointmentDetailModal> createState() => _AppointmentDetailModalState();
@@ -201,130 +299,142 @@ class _AppointmentDetailModalState extends State<_AppointmentDetailModal> {
   }
 
   void _save(BuildContext context) async {
-    final updatedAppt = widget.appointment.copyWith(
+    final updated = widget.appointment.copyWith(
       notes: _notesController.text,
       workPerformed: _workPerformedController.text,
       outcomes: _outcomesController.text,
       medications: _medicationsController.text,
       status: _status,
     );
-    await Provider.of<ClinicProvider>(context, listen: false).updateAppointment(updatedAppt);
+
+    final provider = Provider.of<ClinicProvider>(context, listen: false);
+    await provider.updateAppointment(updated);
+
     if (!mounted) return;
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Appointment updated!'), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Appointment updated successfully!'), backgroundColor: Colors.green),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+
     return Container(
       decoration: const BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, controller) {
-          return SingleChildScrollView(
-            controller: controller,
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: EdgeInsets.only(
+        top: 24,
+        left: 24,
+        right: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
-                const SizedBox(height: 24),
-                
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Appointment Details', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppTheme.accentCyan)),
-                        const SizedBox(height: 4),
-                        Text('${widget.patient.name} • ${DateFormat('MMM d, yyyy - hh:mm a').format(widget.appointment.dateTime)}', style: const TextStyle(color: Colors.white70)),
-                      ],
+                    Text(
+                      widget.patient.name,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22, color: AppTheme.textPrimary),
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentCyan, foregroundColor: Colors.black),
-                      onPressed: () {
-                        Navigator.pop(context); // Close modal
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => ChartingScreen(patient: widget.patient)));
-                      },
-                      child: const Text('Open Chart'),
+                    Text(
+                      settings.translate('Appointment Details'),
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
-
-                // Status Toggle
-                Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Scheduled', style: TextStyle(color: Colors.white)),
-                        value: 'Scheduled',
-                        groupValue: _status,
-                        activeColor: AppTheme.accentCyan,
-                        onChanged: (val) => setState(() => _status = val!),
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Completed', style: TextStyle(color: Colors.green)),
-                        value: 'Completed',
-                        groupValue: _status,
-                        activeColor: Colors.green,
-                        onChanged: (val) => setState(() => _status = val!),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                TextField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(labelText: 'Reason for Visit / Notes', border: OutlineInputBorder()),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _workPerformedController,
-                  decoration: const InputDecoration(labelText: 'Work Performed (Procedures, Treatments)', border: OutlineInputBorder()),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _outcomesController,
-                  decoration: const InputDecoration(labelText: 'Outcomes & Doctor Notes', border: OutlineInputBorder()),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _medicationsController,
-                  decoration: const InputDecoration(labelText: 'Medications Prescribed', border: OutlineInputBorder()),
-                  maxLines: 2,
-                ),
-                
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentCyan,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.all(20),
-                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () => _save(context),
-                  child: const Text('Save Details'),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.medical_services),
+                  label: Text(settings.translate('Open Chart')),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChartingScreen(patient: widget.patient)),
+                    );
+                  },
                 ),
               ],
             ),
-          );
-        },
+            const SizedBox(height: 24),
+            const Divider(color: AppTheme.borderLight),
+            const SizedBox(height: 16),
+
+            // Status Selector
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<String>(
+                    title: Text(settings.translate('Scheduled'), style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold)),
+                    value: 'Scheduled',
+                    groupValue: _status,
+                    activeColor: Colors.orange.shade800,
+                    onChanged: (val) => setState(() => _status = val!),
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<String>(
+                    title: Text(settings.translate('Completed'), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                    value: 'Completed',
+                    groupValue: _status,
+                    activeColor: Colors.green,
+                    onChanged: (val) => setState(() => _status = val!),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            TextField(
+              controller: _notesController,
+              decoration: InputDecoration(labelText: settings.translate('Reason for Visit / Notes')),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _workPerformedController,
+              decoration: InputDecoration(labelText: settings.translate('Work Performed (Procedures, Treatments)')),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _outcomesController,
+              decoration: InputDecoration(labelText: settings.translate('Outcomes & Doctor Notes')),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _medicationsController,
+              decoration: InputDecoration(
+                labelText: settings.translate('Medications Prescribed'),
+                hintText: '1. Medication A\n2. Medication B',
+              ),
+              minLines: 3,
+              maxLines: 5,
+              keyboardType: TextInputType.multiline,
+            ),
+            
+            const SizedBox(height: 32),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(18),
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () => _save(context),
+              child: Text(settings.translate('Save Details')),
+            ),
+          ],
+        ),
       ),
     );
   }

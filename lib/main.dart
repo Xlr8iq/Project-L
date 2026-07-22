@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'core/theme.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/dashboard/providers/clinic_provider.dart';
+import 'features/dashboard/providers/settings_provider.dart';
 
 void main() {
   // Initialize FFI for Windows/Desktop SQLite support.
@@ -19,6 +20,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ClinicProvider()..loadData()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
       child: const DentalClinicApp(),
     ),
@@ -30,11 +32,21 @@ class DentalClinicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Dental Clinic',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      home: const DashboardScreen(),
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return MaterialApp(
+          title: 'Dental Clinic',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          builder: (context, child) {
+            return Directionality(
+              textDirection: settings.isArabic ? TextDirection.rtl : TextDirection.ltr,
+              child: child!,
+            );
+          },
+          home: const DashboardScreen(),
+        );
+      },
     );
   }
 }

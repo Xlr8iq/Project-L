@@ -60,6 +60,9 @@ class ClinicalSidebar extends StatelessWidget {
             _buildProcedureButton(context, 'Extraction', AppTheme.chartExtraction, ProcedureType.extraction, provider),
             _buildProcedureButton(context, 'Endodontic', AppTheme.chartEndo, ProcedureType.endo, provider),
             _buildProcedureButton(context, 'Implant', AppTheme.chartImplant, ProcedureType.implant, provider),
+            _buildProcedureButton(context, 'Crown', AppTheme.chartCrown, ProcedureType.crown, provider),
+            _buildProcedureButton(context, 'Veneer', AppTheme.chartVeneer, ProcedureType.veneer, provider),
+            _buildProcedureButton(context, 'Bridge', AppTheme.chartBridge, ProcedureType.bridge, provider),
             const Spacer(),
             TextButton.icon(
               onPressed: () => provider.applyProcedure(ProcedureType.none),

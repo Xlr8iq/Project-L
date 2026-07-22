@@ -16,6 +16,9 @@ class ToothItem extends StatelessWidget {
       case ProcedureType.extraction: return AppTheme.chartExtraction;
       case ProcedureType.endo: return AppTheme.chartEndo;
       case ProcedureType.implant: return AppTheme.chartImplant;
+      case ProcedureType.crown: return AppTheme.chartCrown;
+      case ProcedureType.veneer: return AppTheme.chartVeneer;
+      case ProcedureType.bridge: return AppTheme.chartBridge;
       case ProcedureType.none:
       default: return AppTheme.toothNormal;
     }

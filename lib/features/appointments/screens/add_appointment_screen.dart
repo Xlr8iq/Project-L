@@ -35,12 +35,12 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.accentCyan,
-              onPrimary: Colors.black,
-              surface: AppTheme.surfaceDark,
-              onSurface: Colors.white,
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryBlue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppTheme.textPrimary,
             ),
           ),
           child: child!,
@@ -60,12 +60,12 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       initialTime: TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.accentCyan,
-              onPrimary: Colors.black,
-              surface: AppTheme.surfaceDark,
-              onSurface: Colors.white,
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryBlue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppTheme.textPrimary,
             ),
           ),
           child: child!,
@@ -169,9 +169,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           Expanded(
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                backgroundColor: _isNewPatient ? AppTheme.accentCyan : Colors.transparent,
-                                foregroundColor: _isNewPatient ? Colors.black : Colors.white,
-                                side: const BorderSide(color: AppTheme.accentCyan),
+                                backgroundColor: _isNewPatient ? AppTheme.primaryBlue : Colors.transparent,
+                                foregroundColor: _isNewPatient ? Colors.white : AppTheme.primaryBlue,
+                                side: const BorderSide(color: AppTheme.primaryBlue),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                               onPressed: () => setState(() => _isNewPatient = true),
                               child: const Text('New Patient (Checkup)'),
@@ -181,9 +182,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           Expanded(
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                backgroundColor: !_isNewPatient ? AppTheme.accentCyan : Colors.transparent,
-                                foregroundColor: !_isNewPatient ? Colors.black : Colors.white,
-                                side: const BorderSide(color: AppTheme.accentCyan),
+                                backgroundColor: !_isNewPatient ? AppTheme.primaryBlue : Colors.transparent,
+                                foregroundColor: !_isNewPatient ? Colors.white : AppTheme.primaryBlue,
+                                side: const BorderSide(color: AppTheme.primaryBlue),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                               onPressed: () => setState(() => _isNewPatient = false),
                               child: const Text('Existing Patient (Checked)'),
@@ -193,12 +195,15 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                       ),
                       const SizedBox(height: 32),
                       
-                      Text('Patient Details', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppTheme.accentCyan)),
+                      Text(
+                        'Patient Details',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.primaryBlue),
+                      ),
                       const SizedBox(height: 24),
                       
                       if (_isNewPatient) ...[
                         TextFormField(
-                          decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(labelText: 'Full Name'),
                           validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                           onSaved: (value) => _name = value!,
                         ),
@@ -207,7 +212,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           children: [
                             Expanded(
                               child: TextFormField(
-                                decoration: const InputDecoration(labelText: 'Age', border: OutlineInputBorder()),
+                                decoration: const InputDecoration(labelText: 'Age'),
                                 keyboardType: TextInputType.number,
                                 validator: (value) => value == null || int.tryParse(value) == null ? 'Required' : null,
                                 onSaved: (value) => _age = int.parse(value!),
@@ -216,7 +221,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
+                                decoration: const InputDecoration(labelText: 'Gender'),
                                 value: _gender,
                                 items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
                                 onChanged: (v) => setState(() => _gender = v!),
@@ -234,7 +239,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               );
                             }
                             return DropdownButtonFormField<Patient>(
-                              decoration: const InputDecoration(labelText: 'Search / Select Patient', border: OutlineInputBorder()),
+                              decoration: const InputDecoration(labelText: 'Search / Select Patient'),
                               value: _selectedPatient,
                               items: provider.patients.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (${p.age} y/o)'))).toList(),
                               onChanged: (v) => setState(() => _selectedPatient = v),
@@ -244,7 +249,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                       ],
                       
                       const SizedBox(height: 32),
-                      Text('Appointment Details', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppTheme.accentCyan)),
+                      Text(
+                        'Appointment Details',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.primaryBlue),
+                      ),
                       const SizedBox(height: 24),
                       Row(
                         children: [
@@ -269,17 +277,15 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        decoration: const InputDecoration(labelText: 'Notes / Reason', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(labelText: 'Notes / Reason'),
                         maxLines: 3,
                         onSaved: (value) => _notes = value ?? '',
                       ),
                       const SizedBox(height: 32),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.accentCyan,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.all(20),
-                          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          padding: const EdgeInsets.all(18),
+                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         onPressed: _submit,
                         child: Text(_isNewPatient ? 'Save Checkup' : 'Proceed to Charting'),
