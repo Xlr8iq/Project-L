@@ -22,20 +22,23 @@ class ChartingScreen extends StatelessWidget {
         return provider;
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: AppTheme.chartBlueAccent,
+          backgroundColor: AppTheme.primaryBlue,
           foregroundColor: Colors.white,
           elevation: 2,
-          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
           title: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                patient != null ? 'Clinical Dental Chart' : 'Clinical Dental Chart',
-                style: const TextStyle(
+              const Text(
+                'Clinical Dental Chart',
+                style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
@@ -52,7 +55,7 @@ class ChartingScreen extends StatelessWidget {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.fullscreen, color: Colors.white),
+              icon: const Icon(Icons.crop_free, color: Colors.white),
               onPressed: () {},
               tooltip: 'Fullscreen',
             ),
@@ -77,22 +80,22 @@ class ChartingScreen extends StatelessWidget {
                 const PopupMenuItem(value: 'save', child: Text('Save & Close')),
               ],
             ),
+            const SizedBox(width: 8),
           ],
         ),
         body: Column(
           children: [
-            // ─── Main Chart Area ───
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: const PalmerChart(),
-                ),
-              ),
+            // ─── SECTION 1: Palmer Odontogram Chart (~65% Height) ───
+            const Expanded(
+              flex: 65,
+              child: PalmerChart(),
             ),
 
-            // ─── Tooth Detail Panel (bottom) ───
-            const ToothDetailPanel(),
+            // ─── SECTION 2: Clinical Workflow Bottom Card (~35% Height) ───
+            const Expanded(
+              flex: 35,
+              child: ToothDetailPanel(),
+            ),
           ],
         ),
       ),

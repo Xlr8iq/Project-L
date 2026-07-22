@@ -9,52 +9,44 @@ import '../painters/surface_diagram_painter.dart';
 class ToothDetailPanel extends StatelessWidget {
   const ToothDetailPanel({Key? key}) : super(key: key);
 
-  Widget _buildProcedureChip(
-    BuildContext context,
-    String label,
-    Color color,
-    ProcedureType type,
-    Tooth currentTooth,
-    OdontogramProvider provider,
-  ) {
-    final isCurrent = currentTooth.procedure == type;
+  Widget _buildProcedureCard({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required Color color,
+    required ProcedureType type,
+    required Tooth tooth,
+    required OdontogramProvider provider,
+  }) {
+    final isSelected = tooth.procedure == type;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       onTap: () => provider.applyProcedure(type),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Container(
+        width: 100,
+        height: 72,
         decoration: BoxDecoration(
-          color: isCurrent ? color : color.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? AppTheme.primaryBlue.withOpacity(0.08) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isCurrent ? color : color.withOpacity(0.4),
-            width: isCurrent ? 2 : 1,
+            color: isSelected ? AppTheme.primaryBlue : const Color(0xFFE2E8F0),
+            width: isSelected ? 2.0 : 1.0,
           ),
-          boxShadow: isCurrent
-              ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 6, spreadRadius: 1)]
-              : [],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isCurrent ? Colors.white : color,
-              ),
-            ),
-            const SizedBox(width: 8),
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 6),
             Text(
               label,
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: isCurrent ? Colors.white : color.withOpacity(0.95),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryBlue : const Color(0xFF37474F),
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -66,244 +58,34 @@ class ToothDetailPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<OdontogramProvider>(
       builder: (context, provider, child) {
-        if (provider.selectedTooth == null) {
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: AppTheme.borderLight, width: 1)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.touch_app, color: AppTheme.primaryBlue, size: 22),
-                SizedBox(width: 10),
-                Text(
-                  'Select a tooth from the chart above to begin clinical procedure charting',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final tooth = provider.getTooth(provider.selectedTooth!);
+        final toothNumber = provider.selectedTooth ?? 1; // Default to Tooth #1 if none selected
+        final tooth = provider.getTooth(toothNumber);
 
         return Container(
-          width: double.infinity,
-          decoration: const BoxDecoration(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(top: BorderSide(color: AppTheme.borderLight, width: 1.5)),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth > 800;
+              final isDesktop = constraints.maxWidth > 750;
 
               if (isDesktop) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // ─── Column 1: Tooth Identity & Palmer Display ───
-                    SizedBox(
-                      width: 220,
-                      child: Row(
-                        children: [
-                          // Palmer Display
-                          SizedBox(
-                            width: 64,
-                            height: 64,
-                            child: CustomPaint(
-                              painter: PalmerBracketPainter(
-                                quadrant: tooth.palmerQuadrant,
-                                palmerNumber: tooth.palmerNumber,
-                                isSelected: true,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  tooth.fullName,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${tooth.quadrantName} • ${tooth.dentition}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const VerticalDivider(width: 32, color: AppTheme.borderLight),
-
-                    // ─── Column 2: Surface Diagram Selector ───
-                    SizedBox(
-                      width: 160,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Surfaces (${provider.selectedSurfaces.length})',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTapDown: (details) {
-                              final surface = SurfaceDiagramPainter.hitTestSurface(
-                                details.localPosition,
-                                const Size(130, 130),
-                              );
-                              if (surface != null) {
-                                provider.toggleSurface(surface);
-                              }
-                            },
-                            child: SizedBox(
-                              width: 130,
-                              height: 130,
-                              child: CustomPaint(
-                                painter: SurfaceDiagramPainter(
-                                  selectedSurfaces: provider.selectedSurfaces,
-                                  isAnterior: tooth.isAnterior,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const VerticalDivider(width: 32, color: AppTheme.borderLight),
-
-                    // ─── Column 3 (PRIMARY FOCUS): Procedure Selection Palette ───
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'CLINICAL PROCEDURE SELECTION',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryBlue,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              if (tooth.procedure != ProcedureType.none)
-                                TextButton.icon(
-                                  onPressed: () => provider.applyProcedure(ProcedureType.none),
-                                  icon: const Icon(Icons.clear, size: 16, color: Colors.redAccent),
-                                  label: const Text('Clear Procedure', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-                                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              _buildProcedureChip(context, 'Restoration (Composite)', AppTheme.chartRestoration, ProcedureType.restoration, tooth, provider),
-                              _buildProcedureChip(context, 'Extraction', AppTheme.chartExtraction, ProcedureType.extraction, tooth, provider),
-                              _buildProcedureChip(context, 'Endodontic (RCT)', AppTheme.chartEndo, ProcedureType.endo, tooth, provider),
-                              _buildProcedureChip(context, 'Implant', AppTheme.chartImplant, ProcedureType.implant, tooth, provider),
-                              _buildProcedureChip(context, 'Crown', AppTheme.chartCrown, ProcedureType.crown, tooth, provider),
-                              _buildProcedureChip(context, 'Veneer', AppTheme.chartVeneer, ProcedureType.veneer, tooth, provider),
-                              _buildProcedureChip(context, 'Bridge', AppTheme.chartBridge, ProcedureType.bridge, tooth, provider),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              }
-
-              // Mobile Layout
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 56,
-                        height: 56,
-                        child: CustomPaint(
-                          painter: PalmerBracketPainter(
-                            quadrant: tooth.palmerQuadrant,
-                            palmerNumber: tooth.palmerNumber,
-                            isSelected: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tooth.fullName,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                            ),
-                            Text(
-                              '${tooth.quadrantName} • ${tooth.dentition}',
-                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'CLINICAL PROCEDURE SELECTION',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildProcedureChip(context, 'Restoration', AppTheme.chartRestoration, ProcedureType.restoration, tooth, provider),
-                      _buildProcedureChip(context, 'Extraction', AppTheme.chartExtraction, ProcedureType.extraction, tooth, provider),
-                      _buildProcedureChip(context, 'Endodontic', AppTheme.chartEndo, ProcedureType.endo, tooth, provider),
-                      _buildProcedureChip(context, 'Implant', AppTheme.chartImplant, ProcedureType.implant, tooth, provider),
-                      _buildProcedureChip(context, 'Crown', AppTheme.chartCrown, ProcedureType.crown, tooth, provider),
-                      _buildProcedureChip(context, 'Veneer', AppTheme.chartVeneer, ProcedureType.veneer, tooth, provider),
-                      _buildProcedureChip(context, 'Bridge', AppTheme.chartBridge, ProcedureType.bridge, tooth, provider),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: GestureDetector(
+                    // ─── LEFT COLUMN: Surface Diagram ───
+                    GestureDetector(
                       onTapDown: (details) {
                         final surface = SurfaceDiagramPainter.hitTestSurface(
                           details.localPosition,
@@ -320,10 +102,323 @@ class ToothDetailPanel extends StatelessWidget {
                           painter: SurfaceDiagramPainter(
                             selectedSurfaces: provider.selectedSurfaces,
                             isAnterior: tooth.isAnterior,
+                            isUpper: tooth.isUpper,
                           ),
                         ),
                       ),
                     ),
+
+                    const SizedBox(width: 16),
+
+                    // ─── Palmer Bracket & Tooth Info ───
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              // Large Palmer Display (e.g. ┘1)
+                              SizedBox(
+                                width: 54,
+                                height: 54,
+                                child: CustomPaint(
+                                  painter: PalmerBracketPainter(
+                                    quadrant: tooth.palmerQuadrant,
+                                    palmerNumber: tooth.palmerNumber,
+                                    isSelected: true,
+                                    scale: 1.2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  tooth.fullName,
+                                  style: const TextStyle(
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Metadata horizontal chips row
+                          Row(
+                            children: [
+                              _buildMetadataChip('Quadrant', tooth.quadrantName),
+                              const SizedBox(width: 16),
+                              const SizedBox(height: 28, child: VerticalDivider(width: 1, color: Color(0xFFCBD5E1))),
+                              const SizedBox(width: 16),
+                              _buildMetadataChip('Tooth Type', tooth.toothTypeName),
+                              const SizedBox(width: 16),
+                              const SizedBox(height: 28, child: VerticalDivider(width: 1, color: Color(0xFFCBD5E1))),
+                              const SizedBox(width: 16),
+                              _buildMetadataChip('Dentition', tooth.dentition),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 20),
+                    const SizedBox(height: 140, child: VerticalDivider(width: 1, color: Color(0xFFE2E8F0))),
+                    const SizedBox(width: 20),
+
+                    // ─── RIGHT COLUMN: Treatment Workflow / Procedure Selection ───
+                    Expanded(
+                      flex: 5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Select Procedure',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              // Procedure Grid
+                              Expanded(
+                                child: Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: [
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Composite',
+                                      icon: Icons.medical_services,
+                                      color: AppTheme.primaryBlue,
+                                      type: ProcedureType.restoration,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Root Canal',
+                                      icon: Icons.healing,
+                                      color: Colors.orange.shade700,
+                                      type: ProcedureType.endo,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Crown',
+                                      icon: Icons.shield,
+                                      color: Colors.amber.shade700,
+                                      type: ProcedureType.crown,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Extraction',
+                                      icon: Icons.remove_circle_outline,
+                                      color: Colors.red.shade600,
+                                      type: ProcedureType.extraction,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Implant',
+                                      icon: Icons.build,
+                                      color: Colors.blueGrey.shade700,
+                                      type: ProcedureType.implant,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Veneer',
+                                      icon: Icons.auto_awesome,
+                                      color: Colors.purple.shade600,
+                                      type: ProcedureType.veneer,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Sealant',
+                                      icon: Icons.sanitizer,
+                                      color: Colors.teal.shade600,
+                                      type: ProcedureType.bridge,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                    _buildProcedureCard(
+                                      context: context,
+                                      label: 'Other',
+                                      icon: Icons.more_horiz,
+                                      color: Colors.grey.shade700,
+                                      type: ProcedureType.none,
+                                      tooth: tooth,
+                                      provider: provider,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              // Tall "Next >" Button on the far right matching reference image
+                              InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () {
+                                  if (tooth.procedure != ProcedureType.none) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${tooth.fullName}: Procedure ${tooth.procedure.name.toUpperCase()} confirmed!'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  width: 76,
+                                  height: 154,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(Icons.chevron_right, color: AppTheme.primaryBlue, size: 36),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Next',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryBlue,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              // Mobile Layout
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: CustomPaint(
+                          painter: PalmerBracketPainter(
+                            quadrant: tooth.palmerQuadrant,
+                            palmerNumber: tooth.palmerNumber,
+                            isSelected: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tooth.fullName,
+                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            ),
+                            Text(
+                              '${tooth.quadrantName} • ${tooth.dentition}',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Select Procedure',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildProcedureCard(
+                        context: context,
+                        label: 'Composite',
+                        icon: Icons.medical_services,
+                        color: AppTheme.primaryBlue,
+                        type: ProcedureType.restoration,
+                        tooth: tooth,
+                        provider: provider,
+                      ),
+                      _buildProcedureCard(
+                        context: context,
+                        label: 'Root Canal',
+                        icon: Icons.healing,
+                        color: Colors.orange.shade700,
+                        type: ProcedureType.endo,
+                        tooth: tooth,
+                        provider: provider,
+                      ),
+                      _buildProcedureCard(
+                        context: context,
+                        label: 'Crown',
+                        icon: Icons.shield,
+                        color: Colors.amber.shade700,
+                        type: ProcedureType.crown,
+                        tooth: tooth,
+                        provider: provider,
+                      ),
+                      _buildProcedureCard(
+                        context: context,
+                        label: 'Extraction',
+                        icon: Icons.remove_circle_outline,
+                        color: Colors.red.shade600,
+                        type: ProcedureType.extraction,
+                        tooth: tooth,
+                        provider: provider,
+                      ),
+                      _buildProcedureCard(
+                        context: context,
+                        label: 'Implant',
+                        icon: Icons.build,
+                        color: Colors.blueGrey.shade700,
+                        type: ProcedureType.implant,
+                        tooth: tooth,
+                        provider: provider,
+                      ),
+                      _buildProcedureCard(
+                        context: context,
+                        label: 'Veneer',
+                        icon: Icons.auto_awesome,
+                        color: Colors.purple.shade600,
+                        type: ProcedureType.veneer,
+                        tooth: tooth,
+                        provider: provider,
+                      ),
+                    ],
                   ),
                 ],
               );
@@ -331,6 +426,32 @@ class ToothDetailPanel extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMetadataChip(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryBlue,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -9,14 +9,14 @@ import '../painters/palmer_bracket_painter.dart';
 class PalmerChart extends StatelessWidget {
   const PalmerChart({Key? key}) : super(key: key);
 
-  // Universal tooth numbers for each quadrant, ordered LEFT→RIGHT on screen
-  // Upper Right: Palmer 8,7,6,5,4,3,2,1  → Universal 1,2,3,4,5,6,7,8
+  // Quadrant tooth order matching reference:
+  // Upper Right (Top-Left on screen): Palmer 8,7,6,5,4,3,2,1  → Universal 1,2,3,4,5,6,7,8
   static const List<int> upperRight = [1, 2, 3, 4, 5, 6, 7, 8];
-  // Upper Left: Palmer 1,2,3,4,5,6,7,8  → Universal 9,10,11,12,13,14,15,16
+  // Upper Left (Top-Right on screen): Palmer 1,2,3,4,5,6,7,8  → Universal 9,10,11,12,13,14,15,16
   static const List<int> upperLeft = [9, 10, 11, 12, 13, 14, 15, 16];
-  // Lower Right: Palmer 8,7,6,5,4,3,2,1 → Universal 32,31,30,29,28,27,26,25
+  // Lower Right (Bottom-Left on screen): Palmer 8,7,6,5,4,3,2,1 → Universal 32,31,30,29,28,27,26,25
   static const List<int> lowerRight = [32, 31, 30, 29, 28, 27, 26, 25];
-  // Lower Left: Palmer 1,2,3,4,5,6,7,8  → Universal 24,23,22,21,20,19,18,17
+  // Lower Left (Bottom-Right on screen): Palmer 1,2,3,4,5,6,7,8  → Universal 24,23,22,21,20,19,18,17
   static const List<int> lowerLeft = [24, 23, 22, 21, 20, 19, 18, 17];
 
   Color _getProcedureColor(ProcedureType type) {
@@ -37,164 +37,166 @@ class PalmerChart extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<OdontogramProvider>(
       builder: (context, provider, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final chartWidth = constraints.maxWidth * 0.92;
-            final toothCellWidth = chartWidth / 17; // 16 teeth + 1 divider gap
-            final toothImageHeight = toothCellWidth * 1.85;
-            final bracketHeight = toothCellWidth * 0.75;
-            final totalChartHeight = (bracketHeight * 2) + (toothImageHeight * 2) + 76;
+        return Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final chartWidth = constraints.maxWidth;
+              final chartHeight = constraints.maxHeight;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Center(
-                child: SizedBox(
-                  width: chartWidth,
-                  height: totalChartHeight,
-                  child: Stack(
-                    children: [
-                      // ─── Background Cross Divider (Horizontal + Vertical) ───
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _CrossDividerPainter(
-                            midlineX: (toothCellWidth * 8) + (toothCellWidth / 2),
-                            midlineY: bracketHeight + toothImageHeight + 20,
-                          ),
-                        ),
+              // Calculate spacing and dimensions dynamically
+              final toothCellWidth = (chartWidth - 40) / 17; // 16 teeth + 1 center gap
+              final toothImageHeight = (chartHeight - 120) / 2.6;
+              final bracketHeight = toothCellWidth * 0.75;
+              final midlineX = chartWidth / 2;
+              final midlineY = chartHeight / 2;
+
+              return Stack(
+                children: [
+                  // ─── Blue Cross Divider (3dp, #1565C0) ───
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _CrossDividerPainter(
+                        midlineX: midlineX,
+                        midlineY: midlineY,
                       ),
+                    ),
+                  ),
 
-                      // ─── Chart Content ───
+                  // ─── Quadrants Layout ───
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // ─── UPPER ARCH ───
                       Column(
                         children: [
-                          // Quadrant Labels (Upper)
-                          SizedBox(
-                            height: 20,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      'Upper Right',
-                                      style: TextStyle(
-                                        color: AppTheme.chartBlueAccent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
+                          // Quadrant Titles (Centered above each upper quadrant)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'Upper Right',
+                                    style: TextStyle(
+                                      color: AppTheme.chartBlueAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: toothCellWidth), // center divider gap
-                                Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      'Upper Left',
-                                      style: TextStyle(
-                                        color: AppTheme.chartBlueAccent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
+                              ),
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'Upper Left',
+                                    style: TextStyle(
+                                      color: AppTheme.chartBlueAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Palmer Brackets Row (Upper)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ..._buildBracketRow(upperRight, provider, bracketHeight, toothCellWidth),
+                              SizedBox(width: toothCellWidth), // Center divider gap
+                              ..._buildBracketRow(upperLeft, provider, bracketHeight, toothCellWidth),
+                            ],
                           ),
 
-                          const SizedBox(height: 4),
+                          // Anatomical Teeth Row (Upper)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ..._buildToothRow(upperRight, provider, toothImageHeight, toothCellWidth),
+                              SizedBox(width: toothCellWidth), // Center divider gap
+                              ..._buildToothRow(upperLeft, provider, toothImageHeight, toothCellWidth),
+                            ],
+                          ),
+                        ],
+                      ),
 
-                          // Upper Row: Brackets + Numbers
-                          SizedBox(
-                            height: bracketHeight,
-                            child: Row(
-                              children: [
-                                ..._buildBracketRow(upperRight, provider, bracketHeight, toothCellWidth),
-                                SizedBox(width: toothCellWidth),
-                                ..._buildBracketRow(upperLeft, provider, bracketHeight, toothCellWidth),
-                              ],
-                            ),
+                      // ─── LOWER ARCH ───
+                      Column(
+                        children: [
+                          // Anatomical Teeth Row (Lower)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ..._buildToothRow(lowerRight, provider, toothImageHeight, toothCellWidth),
+                              SizedBox(width: toothCellWidth), // Center divider gap
+                              ..._buildToothRow(lowerLeft, provider, toothImageHeight, toothCellWidth),
+                            ],
                           ),
 
-                          // Upper Row: Tooth Images
-                          SizedBox(
-                            height: toothImageHeight,
-                            child: Row(
-                              children: [
-                                ..._buildToothRow(upperRight, provider, toothImageHeight, toothCellWidth),
-                                SizedBox(width: toothCellWidth),
-                                ..._buildToothRow(upperLeft, provider, toothImageHeight, toothCellWidth),
-                              ],
-                            ),
+                          // Palmer Brackets Row (Lower)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ..._buildBracketRow(lowerRight, provider, bracketHeight, toothCellWidth),
+                              SizedBox(width: toothCellWidth), // Center divider gap
+                              ..._buildBracketRow(lowerLeft, provider, bracketHeight, toothCellWidth),
+                            ],
                           ),
 
-                          const SizedBox(height: 16), // Divider gap
+                          const SizedBox(height: 8),
 
-                          // Lower Row: Tooth Images
-                          SizedBox(
-                            height: toothImageHeight,
-                            child: Row(
-                              children: [
-                                ..._buildToothRow(lowerRight, provider, toothImageHeight, toothCellWidth),
-                                SizedBox(width: toothCellWidth),
-                                ..._buildToothRow(lowerLeft, provider, toothImageHeight, toothCellWidth),
-                              ],
-                            ),
-                          ),
-
-                          // Lower Row: Brackets + Numbers
-                          SizedBox(
-                            height: bracketHeight,
-                            child: Row(
-                              children: [
-                                ..._buildBracketRow(lowerRight, provider, bracketHeight, toothCellWidth),
-                                SizedBox(width: toothCellWidth),
-                                ..._buildBracketRow(lowerLeft, provider, bracketHeight, toothCellWidth),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          // Quadrant Labels (Lower)
-                          SizedBox(
-                            height: 20,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      'Lower Right',
-                                      style: TextStyle(
-                                        color: AppTheme.chartBlueAccent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
+                          // Quadrant Titles (Centered below each lower quadrant)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'Lower Right',
+                                    style: TextStyle(
+                                      color: AppTheme.chartBlueAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: toothCellWidth),
-                                Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      'Lower Left',
-                                      style: TextStyle(
-                                        color: AppTheme.chartBlueAccent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
+                              ),
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'Lower Left',
+                                    style: TextStyle(
+                                      color: AppTheme.chartBlueAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
-                ),
-              ),
-            );
-          },
+                ],
+              );
+            },
+          ),
         );
       },
     );
@@ -254,7 +256,7 @@ class PalmerChart extends StatelessWidget {
   }
 }
 
-/// Draws the continuous blue horizontal and vertical cross divider lines (3dp thick)
+/// Draws the continuous blue horizontal and vertical cross divider lines (3dp thick, #1565C0)
 class _CrossDividerPainter extends CustomPainter {
   final double midlineX;
   final double midlineY;
@@ -272,17 +274,17 @@ class _CrossDividerPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.square;
 
-    // Continuous Horizontal Divider Line
+    // Continuous Horizontal Line
     canvas.drawLine(
-      Offset(0, midlineY),
-      Offset(size.width, midlineY),
+      Offset(16, midlineY),
+      Offset(size.width - 16, midlineY),
       paint,
     );
 
-    // Continuous Vertical Divider Line
+    // Continuous Vertical Line
     canvas.drawLine(
-      Offset(midlineX, 20),
-      Offset(midlineX, size.height - 20),
+      Offset(midlineX, 16),
+      Offset(midlineX, size.height - 16),
       paint,
     );
   }
