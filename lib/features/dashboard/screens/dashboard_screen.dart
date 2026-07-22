@@ -206,7 +206,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final settings = context.watch<SettingsProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: Text(settings.translate('Dental Clinic')),
+        centerTitle: true,
+        title: Text(
+          settings.translate('Lumina'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, letterSpacing: 0.5),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
           const SizedBox(width: 16),

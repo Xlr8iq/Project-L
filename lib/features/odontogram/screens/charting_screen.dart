@@ -27,8 +27,9 @@ class ChartingScreen extends StatelessWidget {
           backgroundColor: AppTheme.chartBlueAccent,
           foregroundColor: Colors.white,
           elevation: 2,
+          centerTitle: true,
           title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 patient != null ? 'Clinical Dental Chart' : 'Clinical Dental Chart',

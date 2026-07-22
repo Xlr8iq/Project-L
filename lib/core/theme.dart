@@ -60,7 +60,7 @@ class AppTheme {
         backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
         elevation: 2,
-        centerTitle: false,
+        centerTitle: true,
         titleTextStyle: GoogleFonts.outfit(
           color: Colors.white,
           fontSize: 18,

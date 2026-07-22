@@ -1,6 +1,7 @@
 class Translations {
   static const Map<String, String> ar = {
-    'Dental Clinic': 'عيادة الأسنان',
+    'Lumina': 'لومينا',
+    'Dental Clinic': 'لومينا',
     'Overview': 'نظرة عامة',
     'Appointments': 'المواعيد',
     'Patients': 'المرضى',

@@ -35,7 +35,7 @@ class DentalClinicApp extends StatelessWidget {
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
         return MaterialApp(
-          title: 'Dental Clinic',
+          title: 'Lumina',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           builder: (context, child) {
