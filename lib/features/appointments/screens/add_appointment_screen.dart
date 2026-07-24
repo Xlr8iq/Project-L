@@ -17,24 +17,21 @@ class AddAppointmentScreen extends StatefulWidget {
 class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Patient Controllers & FocusNode
+  // Search & Focus Controllers
   final TextEditingController _patientSearchController = TextEditingController();
   final FocusNode _patientFocusNode = FocusNode();
 
   Patient? _selectedPatient;
-  bool _isNewPatient = true;
 
-  // New Patient Form State / Controllers
+  // New Patient Form Controllers
   final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController(text: '25');
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _emergencyContactController = TextEditingController();
   final TextEditingController _emergencyPhoneController = TextEditingController();
-  final TextEditingController _patientNotesController = TextEditingController();
 
   String _gender = 'Male';
-  DateTime? _dateOfBirth;
-  int _calculatedAge = 0;
 
   // Appointment Form Fields
   DateTime _appointmentDate = DateTime.now();
@@ -94,98 +91,50 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     _patientFocusNode.dispose();
 
     _fullNameController.dispose();
+    _ageController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     _emergencyContactController.dispose();
     _emergencyPhoneController.dispose();
-    _patientNotesController.dispose();
     super.dispose();
   }
 
   void _onSearchInputChanged() {
-    final text = _patientSearchController.text;
+    final typedText = _patientSearchController.text;
     if (_selectedPatient == null) {
-      // Sync typed text to full name controller if creating new patient
-      if (_fullNameController.text != text) {
-        _fullNameController.text = text;
-      }
+      // Automatically populate Full Name field from Search Patient field
+      _fullNameController.text = typedText;
     }
   }
 
   void _selectExistingPatient(Patient patient) {
     setState(() {
       _selectedPatient = patient;
-      _isNewPatient = false;
       _patientSearchController.text = patient.name;
       
-      // Auto-populate all fields for reference
+      // Auto-populate fields
       _fullNameController.text = patient.name;
+      _ageController.text = patient.age.toString();
       _phoneController.text = patient.phone;
       _gender = patient.gender.isNotEmpty ? patient.gender : 'Male';
       _addressController.text = patient.address;
       _emergencyContactController.text = patient.emergencyContact;
       _emergencyPhoneController.text = patient.emergencyPhone;
-      _dateOfBirth = patient.dateOfBirth;
-      _calculatedAge = patient.dateOfBirth != null
-          ? _calculateAgeFromDOB(patient.dateOfBirth!)
-          : patient.age;
     });
   }
 
   void _clearSelectedPatient() {
     setState(() {
       _selectedPatient = null;
-      _isNewPatient = true;
       _patientSearchController.clear();
       _fullNameController.clear();
+      _ageController.text = '25';
       _phoneController.clear();
       _addressController.clear();
       _emergencyContactController.clear();
       _emergencyPhoneController.clear();
-      _patientNotesController.clear();
       _gender = 'Male';
-      _dateOfBirth = null;
-      _calculatedAge = 0;
     });
-  }
-
-  int _calculateAgeFromDOB(DateTime dob) {
-    final now = DateTime.now();
-    int age = now.year - dob.year;
-    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
-      age--;
-    }
-    return age < 0 ? 0 : age;
-  }
-
-  Future<void> _pickDateOfBirth() async {
-    final initial = _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25));
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(1920),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryBlue,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: AppTheme.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _dateOfBirth = picked;
-        _calculatedAge = _calculateAgeFromDOB(picked);
-      });
-    }
   }
 
   Future<void> _pickAppointmentDate() async {
@@ -266,7 +215,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       if (_chargeConsultationFee && _paidToday > _consultationFee) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Paid Today amount cannot exceed the Consultation Fee.'),
+            content: Text('Paid Today amount cannot exceed Consultation Fee.'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -298,22 +247,21 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
           if (existing.isNotEmpty) {
             patient = existing.first;
           } else {
-            // Automatically create new patient with all specified details
-            final ageToSave = _calculatedAge > 0 ? _calculatedAge : 25;
+            // Automatically create new patient with specified numeric age and details
+            final ageVal = int.tryParse(_ageController.text.trim()) ?? 25;
             patient = await provider.addPatient(
               nameInput,
-              ageToSave,
+              ageVal,
               _gender,
               phone: _phoneController.text.trim(),
               address: _addressController.text.trim(),
               emergencyContact: _emergencyContactController.text.trim(),
               emergencyPhone: _emergencyPhoneController.text.trim(),
-              dateOfBirth: _dateOfBirth,
             );
           }
         }
 
-        // Construct administrative notes with fee summary if enabled
+        // Construct administrative notes
         final paymentSummary = _chargeConsultationFee
             ? 'Fee: \$${_consultationFee.toStringAsFixed(2)} | Paid: \$${_paidToday.toStringAsFixed(2)} | Bal: \$${_remainingBalance.toStringAsFixed(2)} ($_paymentMethod)'
             : 'No Consultation Fee';
@@ -435,7 +383,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                     if (_selectedPatient != null && _selectedPatient!.name != val) {
                                       setState(() {
                                         _selectedPatient = null;
-                                        _isNewPatient = true;
                                       });
                                     }
                                   },
@@ -536,7 +483,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   spacing: 24,
                                   runSpacing: 8,
                                   children: [
-                                    _buildInfoChip(Icons.cake, 'Age / DOB', '${_selectedPatient!.age} y/o (${_selectedPatient!.gender})'),
+                                    _buildInfoChip(Icons.numbers, 'Age / Sex', '${_selectedPatient!.age} y/o (${_selectedPatient!.gender})'),
                                     if (_selectedPatient!.phone.isNotEmpty)
                                       _buildInfoChip(Icons.phone, 'Phone', _selectedPatient!.phone),
                                     if (_selectedPatient!.address.isNotEmpty)
@@ -556,11 +503,11 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           _buildReadOnlyTreatmentPreview(_selectedPatient!),
                         ],
 
-                        // ─── AUTO-EXPANDED NEW PATIENT FORM (If typed name not in DB) ───
+                        // ─── AUTO-EXPANDED NEW PATIENT FORM ───
                         if (_selectedPatient == null) ...[
                           const SizedBox(height: 20),
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: Colors.amber.withOpacity(0.06),
                               borderRadius: BorderRadius.circular(10),
@@ -586,11 +533,11 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Required Fields: Full Name, Gender, Phone Number
+                          // Row 1: Full Name (Auto-filled), Gender, Age (Numeric)
                           Row(
                             children: [
                               Expanded(
-                                flex: 2,
+                                flex: 3,
                                 child: TextFormField(
                                   controller: _fullNameController,
                                   decoration: const InputDecoration(
@@ -602,7 +549,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               ),
                               const SizedBox(width: 16),
                               Expanded(
-                                flex: 1,
+                                flex: 2,
                                 child: DropdownButtonFormField<String>(
                                   decoration: const InputDecoration(
                                     labelText: 'Gender *',
@@ -619,6 +566,28 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               Expanded(
                                 flex: 2,
                                 child: TextFormField(
+                                  controller: _ageController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Age *',
+                                    prefixIcon: Icon(Icons.numbers),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Required';
+                                    if (int.tryParse(val.trim()) == null) return 'Must be number';
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Row 2: Phone Number & Address (Optional)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
                                   controller: _phoneController,
                                   decoration: const InputDecoration(
                                     labelText: 'Phone Number *',
@@ -628,60 +597,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   validator: (val) => val == null || val.trim().isEmpty ? 'Phone Number is required' : null,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Optional Fields: Date of Birth & Auto-Calculated Age
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: _pickDateOfBirth,
-                                  child: InputDecorator(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Date of Birth (Preferred)',
-                                      prefixIcon: Icon(Icons.cake_outlined),
-                                    ),
-                                    child: Text(
-                                      _dateOfBirth == null
-                                          ? 'Select Date of Birth'
-                                          : DateFormat('MMM dd, yyyy').format(_dateOfBirth!),
-                                      style: TextStyle(
-                                        color: _dateOfBirth == null ? AppTheme.textSecondary : AppTheme.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryBlue.withOpacity(0.06),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppTheme.borderLight),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.numbers, color: AppTheme.primaryBlue, size: 20),
-                                      const SizedBox(width: 12),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            'Age (Calculated from DOB)',
-                                            style: TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            _dateOfBirth != null ? '$_calculatedAge years old' : 'Calculated on DOB pick',
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                child: TextFormField(
+                                  controller: _addressController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Address (Optional)',
+                                    prefixIcon: Icon(Icons.home_outlined),
                                   ),
                                 ),
                               ),
@@ -689,15 +611,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Optional Fields: Address, Emergency Contact, Emergency Phone
-                          TextFormField(
-                            controller: _addressController,
-                            decoration: const InputDecoration(
-                              labelText: 'Address (Optional)',
-                              prefixIcon: Icon(Icons.home_outlined),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+                          // Row 3: Emergency Contact Name & Number
                           Row(
                             children: [
                               Expanded(
@@ -714,24 +628,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                 child: TextFormField(
                                   controller: _emergencyPhoneController,
                                   decoration: const InputDecoration(
-                                    labelText: 'Emergency Contact Phone (Optional)',
+                                    labelText: 'Emergency Contact Number (Optional)',
                                     prefixIcon: Icon(Icons.phone_paused_outlined),
                                   ),
                                   keyboardType: TextInputType.phone,
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Optional: Patient Notes
-                          TextFormField(
-                            controller: _patientNotesController,
-                            decoration: const InputDecoration(
-                              labelText: 'Patient Notes (Optional)',
-                              prefixIcon: Icon(Icons.note_alt_outlined),
-                            ),
-                            maxLines: 2,
                           ),
                         ],
                       ],
