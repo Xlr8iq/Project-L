@@ -17,14 +17,13 @@ class AddAppointmentScreen extends StatefulWidget {
 class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Search & Focus Controllers
-  final TextEditingController _patientSearchController = TextEditingController();
-  final FocusNode _patientFocusNode = FocusNode();
+  // Single Unified Full Name Controller & FocusNode
+  final TextEditingController _fullNameController = TextEditingController();
+  final FocusNode _fullNameFocusNode = FocusNode();
 
   Patient? _selectedPatient;
 
-  // New Patient Form Controllers
-  final TextEditingController _fullNameController = TextEditingController();
+  // Patient Form Controllers
   final TextEditingController _ageController = TextEditingController(text: '25');
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -79,18 +78,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _patientSearchController.addListener(_onSearchInputChanged);
-  }
-
-  @override
   void dispose() {
-    _patientSearchController.removeListener(_onSearchInputChanged);
-    _patientSearchController.dispose();
-    _patientFocusNode.dispose();
-
     _fullNameController.dispose();
+    _fullNameFocusNode.dispose();
     _ageController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
@@ -99,20 +89,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     super.dispose();
   }
 
-  void _onSearchInputChanged() {
-    final typedText = _patientSearchController.text;
-    if (_selectedPatient == null) {
-      // Automatically populate Full Name field from Search Patient field
-      _fullNameController.text = typedText;
-    }
-  }
-
   void _selectExistingPatient(Patient patient) {
     setState(() {
       _selectedPatient = patient;
-      _patientSearchController.text = patient.name;
-      
-      // Auto-populate fields
       _fullNameController.text = patient.name;
       _ageController.text = patient.age.toString();
       _phoneController.text = patient.phone;
@@ -126,7 +105,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   void _clearSelectedPatient() {
     setState(() {
       _selectedPatient = null;
-      _patientSearchController.clear();
       _fullNameController.clear();
       _ageController.text = '25';
       _phoneController.clear();
@@ -197,9 +175,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final nameInput = _fullNameController.text.trim().isNotEmpty
-          ? _fullNameController.text.trim()
-          : _patientSearchController.text.trim();
+      final nameInput = _fullNameController.text.trim();
 
       if (nameInput.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -247,7 +223,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
           if (existing.isNotEmpty) {
             patient = existing.first;
           } else {
-            // Automatically create new patient with specified numeric age and details
+            // Automatically create new patient with specified details
             final ageVal = int.tryParse(_ageController.text.trim()) ?? 25;
             patient = await provider.addPatient(
               nameInput,
@@ -327,27 +303,17 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                 children: [
                   // ─── CARD 1: PATIENT ───
                   _buildCard(
-                    title: 'Patient',
+                    title: 'Patient Information',
                     icon: Icons.person_outlined,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Search Patient',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryBlue,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Autocomplete Patient Search
+                        // Row 1: Unified Full Name Autocomplete Field
                         LayoutBuilder(
                           builder: (context, constraints) {
                             return RawAutocomplete<Patient>(
-                              focusNode: _patientFocusNode,
-                              textEditingController: _patientSearchController,
+                              focusNode: _fullNameFocusNode,
+                              textEditingController: _fullNameController,
                               displayStringForOption: (Patient option) => option.name,
                               optionsBuilder: (TextEditingValue textEditingValue) {
                                 final query = textEditingValue.text.trim().toLowerCase();
@@ -370,8 +336,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   controller: controller,
                                   focusNode: focusNode,
                                   decoration: InputDecoration(
-                                    hintText: 'Type Patient Name, Phone, or ID...',
-                                    prefixIcon: const Icon(Icons.search, color: AppTheme.primaryBlue),
+                                    labelText: 'Full Name *',
+                                    hintText: 'Type patient full name (searches database automatically)...',
+                                    prefixIcon: const Icon(Icons.person, color: AppTheme.primaryBlue),
                                     suffixIcon: controller.text.isNotEmpty
                                         ? IconButton(
                                             icon: const Icon(Icons.clear, size: 20),
@@ -379,6 +346,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                           )
                                         : null,
                                   ),
+                                  validator: (val) => val == null || val.trim().isEmpty ? 'Full Name is required' : null,
                                   onChanged: (val) {
                                     if (_selectedPatient != null && _selectedPatient!.name != val) {
                                       setState(() {
@@ -439,7 +407,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           },
                         ),
 
-                        // ─── EXISTING PATIENT POPULATED CARD ───
+                        // If Existing Patient Selected: Display Existing Patient Badge & Treatment Preview
                         if (_selectedPatient != null) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -460,8 +428,8 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                         const Icon(Icons.check_circle, color: AppTheme.primaryBlue, size: 20),
                                         const SizedBox(width: 8),
                                         Text(
-                                          _selectedPatient!.name,
-                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                                          'Existing Patient: ${_selectedPatient!.name}',
+                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                                         ),
                                       ],
                                     ),
@@ -472,28 +440,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        'Patient ID: #${_selectedPatient!.id.toString().padLeft(4, '0')}',
+                                        'ID: #${_selectedPatient!.id.toString().padLeft(4, '0')}',
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const Divider(height: 20, color: AppTheme.borderLight),
-                                Wrap(
-                                  spacing: 24,
-                                  runSpacing: 8,
-                                  children: [
-                                    _buildInfoChip(Icons.numbers, 'Age / Sex', '${_selectedPatient!.age} y/o (${_selectedPatient!.gender})'),
-                                    if (_selectedPatient!.phone.isNotEmpty)
-                                      _buildInfoChip(Icons.phone, 'Phone', _selectedPatient!.phone),
-                                    if (_selectedPatient!.address.isNotEmpty)
-                                      _buildInfoChip(Icons.home, 'Address', _selectedPatient!.address),
-                                    if (_selectedPatient!.emergencyContact.isNotEmpty)
-                                      _buildInfoChip(
-                                        Icons.emergency,
-                                        'Emergency Contact',
-                                        '${_selectedPatient!.emergencyContact} (${_selectedPatient!.emergencyPhone})',
-                                      ),
                                   ],
                                 ),
                               ],
@@ -503,140 +453,94 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           _buildReadOnlyTreatmentPreview(_selectedPatient!),
                         ],
 
-                        // ─── AUTO-EXPANDED NEW PATIENT FORM ───
-                        if (_selectedPatient == null) ...[
-                          const SizedBox(height: 20),
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.06),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.amber.shade400),
+                        const SizedBox(height: 16),
+
+                        // Row 2: Gender, Age (Numeric), Phone Number
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: DropdownButtonFormField<String>(
+                                decoration: const InputDecoration(
+                                  labelText: 'Gender *',
+                                  prefixIcon: Icon(Icons.wc),
+                                ),
+                                value: _gender,
+                                items: ['Male', 'Female', 'Other']
+                                    .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                                    .toList(),
+                                onChanged: (val) => setState(() => _gender = val!),
+                              ),
                             ),
-                            child: Row(
-                              children: const [
-                                Icon(Icons.person_add, color: Colors.amber, size: 20),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Patient not found in database. New Patient form expanded below.',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
-                                  ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _ageController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Age *',
+                                  prefixIcon: Icon(Icons.numbers),
                                 ),
-                              ],
+                                keyboardType: TextInputType.number,
+                                validator: (val) {
+                                  if (val == null || val.trim().isEmpty) return 'Required';
+                                  if (int.tryParse(val.trim()) == null) return 'Numeric only';
+                                  return null;
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          const Text(
-                            'New Patient Information',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                          ),
-                          const SizedBox(height: 16),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 3,
+                              child: TextFormField(
+                                controller: _phoneController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Phone Number *',
+                                  prefixIcon: Icon(Icons.phone_outlined),
+                                ),
+                                keyboardType: TextInputType.phone,
+                                validator: (val) => val == null || val.trim().isEmpty ? 'Phone Number is required' : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
 
-                          // Row 1: Full Name (Auto-filled), Gender, Age (Numeric)
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: TextFormField(
-                                  controller: _fullNameController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Full Name *',
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                  validator: (val) => val == null || val.trim().isEmpty ? 'Full Name is required' : null,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<String>(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Gender *',
-                                    prefixIcon: Icon(Icons.wc),
-                                  ),
-                                  value: _gender,
-                                  items: ['Male', 'Female', 'Other']
-                                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                                      .toList(),
-                                  onChanged: (val) => setState(() => _gender = val!),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _ageController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Age *',
-                                    prefixIcon: Icon(Icons.numbers),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (val) {
-                                    if (val == null || val.trim().isEmpty) return 'Required';
-                                    if (int.tryParse(val.trim()) == null) return 'Must be number';
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
+                        // Row 3: Address (Optional)
+                        TextFormField(
+                          controller: _addressController,
+                          decoration: const InputDecoration(
+                            labelText: 'Address (Optional)',
+                            prefixIcon: Icon(Icons.home_outlined),
                           ),
-                          const SizedBox(height: 16),
+                        ),
+                        const SizedBox(height: 16),
 
-                          // Row 2: Phone Number & Address (Optional)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _phoneController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Phone Number *',
-                                    prefixIcon: Icon(Icons.phone_outlined),
-                                  ),
-                                  keyboardType: TextInputType.phone,
-                                  validator: (val) => val == null || val.trim().isEmpty ? 'Phone Number is required' : null,
+                        // Row 4: Emergency Contact Name & Number (Optional)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _emergencyContactController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Emergency Contact Name (Optional)',
+                                  prefixIcon: Icon(Icons.contact_emergency_outlined),
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _addressController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Address (Optional)',
-                                    prefixIcon: Icon(Icons.home_outlined),
-                                  ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _emergencyPhoneController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Emergency Contact Number (Optional)',
+                                  prefixIcon: Icon(Icons.phone_paused_outlined),
                                 ),
+                                keyboardType: TextInputType.phone,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Row 3: Emergency Contact Name & Number
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _emergencyContactController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Emergency Contact Name (Optional)',
-                                    prefixIcon: Icon(Icons.contact_emergency_outlined),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _emergencyPhoneController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Emergency Contact Number (Optional)',
-                                    prefixIcon: Icon(Icons.phone_paused_outlined),
-                                  ),
-                                  keyboardType: TextInputType.phone,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -1016,18 +920,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
           child,
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoChip(IconData icon, String label, String value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: AppTheme.primaryBlue),
-        const SizedBox(width: 6),
-        Text('$label: ', style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-      ],
     );
   }
 
