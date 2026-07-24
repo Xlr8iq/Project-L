@@ -30,6 +30,11 @@ class Patient {
       'age': age,
       'gender': gender,
       'created_at': createdAt.toIso8601String(),
+      'phone': phone,
+      'address': address,
+      'emergency_contact': emergencyContact,
+      'emergency_phone': emergencyPhone,
+      'date_of_birth': dateOfBirth?.toIso8601String(),
     };
   }
 

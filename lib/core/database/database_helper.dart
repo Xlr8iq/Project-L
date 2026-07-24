@@ -22,7 +22,7 @@ class DatabaseHelper {
     if (kIsWeb) {
       var factory = databaseFactoryFfiWeb;
       return await factory.openDatabase(filePath, options: OpenDatabaseOptions(
-        version: 2,
+        version: 3,
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       ));
@@ -31,7 +31,7 @@ class DatabaseHelper {
       final path = join(dbPath, filePath);
       return await openDatabase(
         path, 
-        version: 2, 
+        version: 3, 
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       );
@@ -44,6 +44,16 @@ class DatabaseHelper {
       await db.execute('DROP TABLE IF EXISTS teeth_chart');
       await db.execute('DROP TABLE IF EXISTS patients');
       await _createDB(db, newVersion);
+    } else if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE patients ADD COLUMN phone TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN address TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN emergency_contact TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN emergency_phone TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN date_of_birth TEXT');
+      } catch (e) {
+        debugPrint("Database Upgrade Warning: $e");
+      }
     }
   }
 
@@ -58,7 +68,12 @@ CREATE TABLE patients (
   name $textType,
   age $integerType,
   gender $textType,
-  created_at $textType
+  created_at $textType,
+  phone TEXT,
+  address TEXT,
+  emergency_contact TEXT,
+  emergency_phone TEXT,
+  date_of_birth TEXT
 )
 ''');
 
@@ -98,6 +113,11 @@ CREATE TABLE teeth_chart (
       age: patient.age,
       gender: patient.gender,
       createdAt: patient.createdAt,
+      phone: patient.phone,
+      address: patient.address,
+      emergencyContact: patient.emergencyContact,
+      emergencyPhone: patient.emergencyPhone,
+      dateOfBirth: patient.dateOfBirth,
     );
   }
 
@@ -112,7 +132,6 @@ CREATE TABLE teeth_chart (
     final db = await instance.database;
     final maps = await db.query(
       'patients',
-      columns: ['id', 'name', 'age', 'gender', 'created_at'],
       where: 'id = ?',
       whereArgs: [id],
     );
