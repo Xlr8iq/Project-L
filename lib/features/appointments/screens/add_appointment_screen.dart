@@ -17,13 +17,11 @@ class AddAppointmentScreen extends StatefulWidget {
 class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Single Patient Name Controller
+  // Patient Name Controller & FocusNode
   final TextEditingController _patientNameController = TextEditingController();
   final FocusNode _patientFocusNode = FocusNode();
   
   Patient? _selectedPatient;
-  List<Patient> _filteredPatients = [];
-  bool _showDropdown = false;
 
   // Appointment Form Fields
   DateTime _appointmentDate = DateTime.now();
@@ -70,63 +68,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _patientNameController.addListener(_onPatientNameChanged);
-    _patientFocusNode.addListener(() {
-      setState(() {
-        _showDropdown = _patientFocusNode.hasFocus && _filteredPatients.isNotEmpty;
-      });
-    });
-  }
-
-  @override
   void dispose() {
-    _patientNameController.removeListener(_onPatientNameChanged);
     _patientNameController.dispose();
     _patientFocusNode.dispose();
     super.dispose();
-  }
-
-  void _onPatientNameChanged() {
-    final query = _patientNameController.text.trim().toLowerCase();
-    final provider = Provider.of<ClinicProvider>(context, listen: false);
-
-    // If user edited text manually after selecting a patient, reset selected patient reference if name no longer matches
-    if (_selectedPatient != null && _selectedPatient!.name.toLowerCase() != query) {
-      setState(() {
-        _selectedPatient = null;
-      });
-    }
-
-    if (query.isEmpty) {
-      setState(() {
-        _filteredPatients = [];
-        _showDropdown = false;
-      });
-      return;
-    }
-
-    final matches = provider.patients.where((p) {
-      final nameMatch = p.name.toLowerCase().contains(query);
-      final idStr = p.id != null ? '#${p.id.toString().padLeft(4, '0')}' : '';
-      final idMatch = idStr.contains(query);
-      return nameMatch || idMatch;
-    }).toList();
-
-    setState(() {
-      _filteredPatients = matches;
-      _showDropdown = _patientFocusNode.hasFocus && matches.isNotEmpty;
-    });
-  }
-
-  void _selectPatient(Patient patient) {
-    setState(() {
-      _selectedPatient = patient;
-      _patientNameController.text = patient.name;
-      _showDropdown = false;
-      _patientFocusNode.unfocus();
-    });
   }
 
   Future<void> _pickAppointmentDate() async {
@@ -192,7 +137,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       if (nameInput.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please enter a patient name.'),
+            content: Text('Please write a patient name.'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -213,18 +158,18 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
       try {
         Patient patient;
-        if (_selectedPatient != null) {
+        if (_selectedPatient != null && _selectedPatient!.name.trim().toLowerCase() == nameInput.toLowerCase()) {
           patient = _selectedPatient!;
         } else {
-          // Check if an exact name match already exists in database
+          // Check if an exact name match exists in database
           final existing = provider.patients.where(
-            (p) => p.name.toLowerCase() == nameInput.toLowerCase(),
+            (p) => p.name.trim().toLowerCase() == nameInput.toLowerCase(),
           ).toList();
 
           if (existing.isNotEmpty) {
             patient = existing.first;
           } else {
-            // Automatically create a new patient with typed name
+            // Create a new patient automatically with typed name
             patient = await provider.addPatient(nameInput, 25, 'Unspecified');
           }
         }
@@ -306,79 +251,112 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                         ),
                         const SizedBox(height: 8),
 
-                        // Single patient name text box with autocomplete dropdown
-                        Column(
-                          children: [
-                            TextFormField(
-                              controller: _patientNameController,
+                        // RawAutocomplete handles focus, dropdown rendering & instant selection flawlessly
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            return RawAutocomplete<Patient>(
                               focusNode: _patientFocusNode,
-                              decoration: InputDecoration(
-                                hintText: 'Write patient name...',
-                                prefixIcon: const Icon(Icons.person, color: AppTheme.primaryBlue),
-                                suffixIcon: _patientNameController.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear, size: 20),
-                                        onPressed: () {
-                                          _patientNameController.clear();
-                                          setState(() {
-                                            _selectedPatient = null;
-                                            _filteredPatients = [];
-                                            _showDropdown = false;
-                                          });
-                                        },
-                                      )
-                                    : null,
-                              ),
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Please write patient name' : null,
-                            ),
-
-                            // Dropdown Menu for Existing Patients
-                            if (_showDropdown && _filteredPatients.isNotEmpty)
-                              Container(
-                                margin: const EdgeInsets.only(top: 4),
-                                constraints: const BoxConstraints(maxHeight: 220),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.4), width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: ListView.separated(
-                                  shrinkWrap: true,
-                                  itemCount: _filteredPatients.length,
-                                  separatorBuilder: (context, index) => const Divider(height: 1, color: AppTheme.borderLight),
-                                  itemBuilder: (context, index) {
-                                    final p = _filteredPatients[index];
-                                    return ListTile(
-                                      dense: true,
-                                      leading: CircleAvatar(
-                                        radius: 14,
-                                        backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
-                                        child: const Icon(Icons.person, size: 16, color: AppTheme.primaryBlue),
-                                      ),
-                                      title: Text(
-                                        p.name,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                      ),
-                                      subtitle: Text(
-                                        'ID: #${p.id.toString().padLeft(4, '0')} • ${p.age} y/o • ${p.gender}',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                      onTap: () => _selectPatient(p),
-                                    );
+                              textEditingController: _patientNameController,
+                              displayStringForOption: (Patient option) => option.name,
+                              optionsBuilder: (TextEditingValue textEditingValue) {
+                                final query = textEditingValue.text.trim().toLowerCase();
+                                if (query.isEmpty) {
+                                  return const Iterable<Patient>.empty();
+                                }
+                                final provider = Provider.of<ClinicProvider>(context, listen: false);
+                                return provider.patients.where((p) {
+                                  final nameMatch = p.name.toLowerCase().contains(query);
+                                  final idMatch = p.id != null && '#${p.id.toString().padLeft(4, '0')}'.contains(query);
+                                  return nameMatch || idMatch;
+                                });
+                              },
+                              onSelected: (Patient selection) {
+                                setState(() {
+                                  _selectedPatient = selection;
+                                  _patientNameController.text = selection.name;
+                                });
+                              },
+                              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                                return TextFormField(
+                                  controller: controller,
+                                  focusNode: focusNode,
+                                  decoration: InputDecoration(
+                                    hintText: 'Write patient name...',
+                                    prefixIcon: const Icon(Icons.person, color: AppTheme.primaryBlue),
+                                    suffixIcon: controller.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear, size: 20),
+                                            onPressed: () {
+                                              controller.clear();
+                                              setState(() {
+                                                _selectedPatient = null;
+                                              });
+                                            },
+                                          )
+                                        : null,
+                                  ),
+                                  validator: (val) => val == null || val.trim().isEmpty ? 'Please write patient name' : null,
+                                  onChanged: (val) {
+                                    if (_selectedPatient != null && _selectedPatient!.name != val) {
+                                      setState(() {
+                                        _selectedPatient = null;
+                                      });
+                                    }
                                   },
-                                ),
-                              ),
-                          ],
+                                );
+                              },
+                              optionsViewBuilder: (context, onSelected, options) {
+                                return Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Material(
+                                    elevation: 6,
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.white,
+                                    child: Container(
+                                      width: constraints.maxWidth,
+                                      constraints: const BoxConstraints(maxHeight: 220),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.4), width: 1.5),
+                                      ),
+                                      child: ListView.separated(
+                                        padding: EdgeInsets.zero,
+                                        shrinkWrap: true,
+                                        itemCount: options.length,
+                                        separatorBuilder: (context, index) => const Divider(height: 1, color: AppTheme.borderLight),
+                                        itemBuilder: (BuildContext context, int index) {
+                                          final Patient option = options.elementAt(index);
+                                          return ListTile(
+                                            dense: true,
+                                            leading: CircleAvatar(
+                                              radius: 14,
+                                              backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+                                              child: const Icon(Icons.person, size: 16, color: AppTheme.primaryBlue),
+                                            ),
+                                            title: Text(
+                                              option.name,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                            ),
+                                            subtitle: Text(
+                                              'ID: #${option.id.toString().padLeft(4, '0')} • ${option.age} y/o • ${option.gender}',
+                                              style: const TextStyle(fontSize: 12),
+                                            ),
+                                            onTap: () {
+                                              onSelected(option);
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
 
-                        // Selection Badge / Existing Patient Info
+                        // Selection Badge & Read-Only Doctor Treatment Preview
                         if (_selectedPatient != null) ...[
                           const SizedBox(height: 12),
                           Row(
