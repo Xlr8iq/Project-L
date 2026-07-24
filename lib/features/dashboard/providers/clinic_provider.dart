@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../core/models/patient.dart';
 import '../../../core/models/appointment.dart';
@@ -19,7 +18,7 @@ class ClinicProvider extends ChangeNotifier {
         patients = await DatabaseHelper.instance.readAllPatients();
         appointments = await DatabaseHelper.instance.readAllAppointments();
       } catch (e) {
-        print("DB Load Error: $e");
+        debugPrint("DB Load Error: $e");
       }
     }
 
@@ -27,13 +26,57 @@ class ClinicProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Patient> addPatient(String name, int age, String gender) async {
+  Future<Patient> addPatient(
+    String name,
+    int age,
+    String gender, {
+    String phone = '',
+    String address = '',
+    String emergencyContact = '',
+    String emergencyPhone = '',
+    DateTime? dateOfBirth,
+  }) async {
     Patient newPatient;
+    final patientObj = Patient(
+      name: name,
+      age: age,
+      gender: gender,
+      createdAt: DateTime.now(),
+      phone: phone,
+      address: address,
+      emergencyContact: emergencyContact,
+      emergencyPhone: emergencyPhone,
+      dateOfBirth: dateOfBirth,
+    );
+
     if (kIsWeb) {
-      newPatient = Patient(id: _webIdCounter++, name: name, age: age, gender: gender, createdAt: DateTime.now());
+      newPatient = Patient(
+        id: _webIdCounter++,
+        name: name,
+        age: age,
+        gender: gender,
+        createdAt: DateTime.now(),
+        phone: phone,
+        address: address,
+        emergencyContact: emergencyContact,
+        emergencyPhone: emergencyPhone,
+        dateOfBirth: dateOfBirth,
+      );
     } else {
-      final p = Patient(name: name, age: age, gender: gender, createdAt: DateTime.now());
-      newPatient = await DatabaseHelper.instance.createPatient(p);
+      newPatient = await DatabaseHelper.instance.createPatient(patientObj);
+      // Ensure in-memory object keeps extra fields
+      newPatient = Patient(
+        id: newPatient.id,
+        name: name,
+        age: age,
+        gender: gender,
+        createdAt: newPatient.createdAt,
+        phone: phone,
+        address: address,
+        emergencyContact: emergencyContact,
+        emergencyPhone: emergencyPhone,
+        dateOfBirth: dateOfBirth,
+      );
     }
     patients.add(newPatient);
     notifyListeners();
