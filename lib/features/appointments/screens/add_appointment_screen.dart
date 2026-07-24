@@ -573,7 +573,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                 Expanded(
                                   child: Text(
                                     'Patient not found in database. New Patient form expanded below.',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black80),
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
                                   ),
                                 ),
                               ],
