@@ -121,6 +121,16 @@ CREATE TABLE teeth_chart (
     );
   }
 
+  Future<int> updatePatient(Patient patient) async {
+    final db = await instance.database;
+    return db.update(
+      'patients',
+      patient.toMap(),
+      where: 'id = ?',
+      whereArgs: [patient.id],
+    );
+  }
+
   Future<List<Patient>> readAllPatients() async {
     final db = await instance.database;
     const orderBy = 'name ASC';

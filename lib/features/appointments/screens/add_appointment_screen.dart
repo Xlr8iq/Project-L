@@ -212,27 +212,56 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
       try {
         Patient patient;
+        final ageVal = int.tryParse(_ageController.text.trim()) ?? 25;
+        final phoneVal = _phoneController.text.trim();
+        final addressVal = _addressController.text.trim();
+        final emergencyContactVal = _emergencyContactController.text.trim();
+        final emergencyPhoneVal = _emergencyPhoneController.text.trim();
+
         if (_selectedPatient != null && _selectedPatient!.name.trim().toLowerCase() == nameInput.toLowerCase()) {
-          patient = _selectedPatient!;
+          final updatedPatient = Patient(
+            id: _selectedPatient!.id,
+            name: nameInput,
+            age: ageVal,
+            gender: _gender,
+            createdAt: _selectedPatient!.createdAt,
+            phone: phoneVal,
+            address: addressVal,
+            emergencyContact: emergencyContactVal,
+            emergencyPhone: emergencyPhoneVal,
+            dateOfBirth: _selectedPatient!.dateOfBirth,
+          );
+          await provider.updatePatient(updatedPatient);
+          patient = updatedPatient;
         } else {
-          // Check if exact name match exists
           final existing = provider.patients.where(
             (p) => p.name.trim().toLowerCase() == nameInput.toLowerCase(),
           ).toList();
 
           if (existing.isNotEmpty) {
-            patient = existing.first;
+            final updatedPatient = Patient(
+              id: existing.first.id,
+              name: nameInput,
+              age: ageVal,
+              gender: _gender,
+              createdAt: existing.first.createdAt,
+              phone: phoneVal,
+              address: addressVal,
+              emergencyContact: emergencyContactVal,
+              emergencyPhone: emergencyPhoneVal,
+              dateOfBirth: existing.first.dateOfBirth,
+            );
+            await provider.updatePatient(updatedPatient);
+            patient = updatedPatient;
           } else {
-            // Automatically create new patient with specified details
-            final ageVal = int.tryParse(_ageController.text.trim()) ?? 25;
             patient = await provider.addPatient(
               nameInput,
               ageVal,
               _gender,
-              phone: _phoneController.text.trim(),
-              address: _addressController.text.trim(),
-              emergencyContact: _emergencyContactController.text.trim(),
-              emergencyPhone: _emergencyPhoneController.text.trim(),
+              phone: phoneVal,
+              address: addressVal,
+              emergencyContact: emergencyContactVal,
+              emergencyPhone: emergencyPhoneVal,
             );
           }
         }
@@ -407,7 +436,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           },
                         ),
 
-                        // If Existing Patient Selected: Display Existing Patient Badge & Treatment Preview
+                        // Existing Patient Selected Summary Badge & Read-Only Doctor Treatment Preview
                         if (_selectedPatient != null) ...[
                           const SizedBox(height: 16),
                           Container(

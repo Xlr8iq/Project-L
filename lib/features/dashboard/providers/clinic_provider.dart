@@ -64,23 +64,21 @@ class ClinicProvider extends ChangeNotifier {
       );
     } else {
       newPatient = await DatabaseHelper.instance.createPatient(patientObj);
-      // Ensure in-memory object keeps extra fields
-      newPatient = Patient(
-        id: newPatient.id,
-        name: name,
-        age: age,
-        gender: gender,
-        createdAt: newPatient.createdAt,
-        phone: phone,
-        address: address,
-        emergencyContact: emergencyContact,
-        emergencyPhone: emergencyPhone,
-        dateOfBirth: dateOfBirth,
-      );
     }
     patients.add(newPatient);
     notifyListeners();
     return newPatient;
+  }
+
+  Future<void> updatePatient(Patient patient) async {
+    final index = patients.indexWhere((p) => p.id == patient.id);
+    if (index != -1) {
+      patients[index] = patient;
+      if (!kIsWeb) {
+        await DatabaseHelper.instance.updatePatient(patient);
+      }
+      notifyListeners();
+    }
   }
 
   Future<Appointment> addAppointment(int patientId, DateTime dateTime, String notes) async {
