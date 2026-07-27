@@ -181,6 +181,8 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                   final patient = provider.getPatientById(appointment.patientId);
                   if (patient == null) return const SizedBox.shrink();
 
+                  final doctorDisplay = provider.doctors.isNotEmpty ? provider.doctors.first.name : '';
+
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16.0),
                     child: InkWell(
@@ -215,11 +217,13 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                                     '${settings.translate("Type:")} ${settings.translate(appointment.notes.isNotEmpty ? appointment.notes : "Checkup / Consultation")}',
                                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${settings.translate("Doctor:")} ${appointment.doctorName}',
-                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                                  ),
+                                  if (doctorDisplay.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${settings.translate("Doctor:")} $doctorDisplay',
+                                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
