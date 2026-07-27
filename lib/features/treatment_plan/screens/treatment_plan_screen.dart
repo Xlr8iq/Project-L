@@ -48,6 +48,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
   }
 
   void _openProcedureChart(BuildContext context, TreatmentPlanItem item) {
+    final clinicProvider = Provider.of<ClinicProvider>(context, listen: false);
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -58,9 +59,8 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
         ),
       ),
     ).then((_) {
-      // Reload treatment plan when returning to the Treatment Plan screen
       if (mounted) {
-        Provider.of<ClinicProvider>(context, listen: false).loadTreatmentPlan(widget.patient.id!);
+        clinicProvider.loadTreatmentPlan(widget.patient.id!);
       }
     });
   }
@@ -111,6 +111,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                 icon: const Icon(Icons.add_chart),
                 label: Text(settings.translate('+ Diagnose / Open Chart')),
                 onPressed: () {
+                  final clinicProvider = Provider.of<ClinicProvider>(context, listen: false);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -118,7 +119,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                     ),
                   ).then((_) {
                     if (mounted) {
-                      Provider.of<ClinicProvider>(context, listen: false).loadTreatmentPlan(widget.patient.id!);
+                      clinicProvider.loadTreatmentPlan(widget.patient.id!);
                     }
                   });
                 },
