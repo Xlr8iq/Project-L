@@ -74,7 +74,9 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
               const SizedBox(height: 16),
               _buildDetailSection(
                 settings.translate('Reason / Notes'),
-                appointment.notes.isEmpty ? settings.translate('No Consultation Fee') : settings.translate(appointment.notes),
+                (appointment.notes.contains('Type:') || appointment.notes.contains('Doctor:') || appointment.notes.contains('Fee:'))
+                    ? settings.translate('None recorded')
+                    : (appointment.notes.isEmpty ? settings.translate('None recorded') : appointment.notes),
                 AppTheme.textPrimary,
               ),
               const SizedBox(height: 16),

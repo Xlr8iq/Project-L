@@ -3,6 +3,10 @@ class Appointment {
   final int patientId;
   final DateTime dateTime;
   final String status;
+  final String appointmentType;
+  final String doctorName;
+  final double consultationFee;
+  final double paidAmount;
   final String notes;
   final String workPerformed;
   final String outcomes;
@@ -13,6 +17,10 @@ class Appointment {
     required this.patientId,
     required this.dateTime,
     this.status = 'Scheduled',
+    this.appointmentType = 'Consultation',
+    this.doctorName = '',
+    this.consultationFee = 0.0,
+    this.paidAmount = 0.0,
     this.notes = '',
     this.workPerformed = '',
     this.outcomes = '',
@@ -25,6 +33,10 @@ class Appointment {
       'patient_id': patientId,
       'date_time': dateTime.toIso8601String(),
       'status': status,
+      'appointment_type': appointmentType,
+      'doctor_name': doctorName,
+      'consultation_fee': consultationFee,
+      'paid_amount': paidAmount,
       'notes': notes,
       'work_performed': workPerformed,
       'outcomes': outcomes,
@@ -38,6 +50,10 @@ class Appointment {
       patientId: map['patient_id'],
       dateTime: DateTime.parse(map['date_time']),
       status: map['status'] ?? 'Scheduled',
+      appointmentType: map['appointment_type'] ?? 'Consultation',
+      doctorName: map['doctor_name'] ?? '',
+      consultationFee: (map['consultation_fee'] as num?)?.toDouble() ?? 0.0,
+      paidAmount: (map['paid_amount'] as num?)?.toDouble() ?? 0.0,
       notes: map['notes'] ?? '',
       workPerformed: map['work_performed'] ?? '',
       outcomes: map['outcomes'] ?? '',
@@ -50,6 +66,10 @@ class Appointment {
     int? patientId,
     DateTime? dateTime,
     String? status,
+    String? appointmentType,
+    String? doctorName,
+    double? consultationFee,
+    double? paidAmount,
     String? notes,
     String? workPerformed,
     String? outcomes,
@@ -60,6 +80,10 @@ class Appointment {
       patientId: patientId ?? this.patientId,
       dateTime: dateTime ?? this.dateTime,
       status: status ?? this.status,
+      appointmentType: appointmentType ?? this.appointmentType,
+      doctorName: doctorName ?? this.doctorName,
+      consultationFee: consultationFee ?? this.consultationFee,
+      paidAmount: paidAmount ?? this.paidAmount,
       notes: notes ?? this.notes,
       workPerformed: workPerformed ?? this.workPerformed,
       outcomes: outcomes ?? this.outcomes,

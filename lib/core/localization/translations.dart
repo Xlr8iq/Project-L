@@ -56,6 +56,9 @@ class Translations {
     // ─── APPOINTMENT CARDS & DIALOGS ───
     "Type:": "النوع:",
     "Doctor:": "الطبيب:",
+    "Consultation Fee:": "الاستشارة:",
+    "Free": "بدون أجور",
+    "Paid": "مدفوع",
     "No Consultation Fee": "بدون أجور استشارة",
     "Print Rx": "طباعة الوصفة",
     "Appointment Details": "تفاصيل الموعد",

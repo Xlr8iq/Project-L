@@ -1,14 +1,11 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/tooth.dart';
 import '../models/treatment_plan_item.dart';
-import '../models/doctor.dart';
-import '../models/procedure_setting.dart';
-import '../models/secretary.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -24,18 +21,18 @@ class DatabaseHelper {
 
   Future<Database> _initDB(String filePath) async {
     if (kIsWeb) {
-      var factory = databaseFactoryFfiWeb;
-      return await factory.openDatabase(filePath, options: OpenDatabaseOptions(
-        version: 6,
+      return await openDatabase(
+        inMemoryDatabasePath,
+        version: 7,
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
-      ));
+      );
     } else {
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, filePath);
       return await openDatabase(
         path, 
-        version: 6, 
+        version: 7, 
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       );
@@ -132,6 +129,16 @@ CREATE TABLE IF NOT EXISTS secretaries (
           debugPrint("Database Upgrade V6 Warning: $e");
         }
       }
+      if (oldVersion < 7) {
+        try {
+          await db.execute("ALTER TABLE appointments ADD COLUMN appointment_type TEXT DEFAULT 'Consultation'");
+          await db.execute("ALTER TABLE appointments ADD COLUMN doctor_name TEXT DEFAULT ''");
+          await db.execute("ALTER TABLE appointments ADD COLUMN consultation_fee REAL DEFAULT 0");
+          await db.execute("ALTER TABLE appointments ADD COLUMN paid_amount REAL DEFAULT 0");
+        } catch (e) {
+          debugPrint("Database Upgrade V7 Warning: $e");
+        }
+      }
     }
   }
 
@@ -161,6 +168,10 @@ CREATE TABLE appointments (
   patient_id $integerType,
   date_time $textType,
   status $textType,
+  appointment_type TEXT DEFAULT 'Consultation',
+  doctor_name TEXT DEFAULT '',
+  consultation_fee REAL DEFAULT 0,
+  paid_amount REAL DEFAULT 0,
   notes TEXT,
   work_performed TEXT,
   outcomes TEXT,
@@ -245,10 +256,8 @@ CREATE TABLE secretaries (
     if (countResult == 0) {
       final now = DateTime.now().toIso8601String();
       final defaultDoctors = [
-        {'name': 'Dr. Ahmed Al-Mousawi', 'specialty': 'Endodontics & Restorative', 'phone': '+964 770 123 4567', 'email': 'ahmed@lumina.clinic', 'color_hex': '#1565C0', 'created_at': now},
-        {'name': 'Dr. Michael Chen', 'specialty': 'Orthodontics & General', 'phone': '+1 (555) 345-6789', 'email': 'michael.chen@lumina.clinic', 'color_hex': '#00897B', 'created_at': now},
-        {'name': 'Dr. Emily Taylor', 'specialty': 'Prosthodontics & Cosmetic', 'phone': '+1 (555) 456-7890', 'email': 'emily.taylor@lumina.clinic', 'color_hex': '#7B1FA2', 'created_at': now},
-        {'name': 'Dr. Alex Smith', 'specialty': 'Oral Surgery & Implants', 'phone': '+1 (555) 567-8901', 'email': 'alex.smith@lumina.clinic', 'color_hex': '#E65100', 'created_at': now},
+        {'name': 'د. أبو الحسن', 'specialty': 'طب وجراحة الأسنان', 'phone': '+964 770 123 4567', 'email': 'abualhassan@lumina.clinic', 'color_hex': '#1565C0', 'created_at': now},
+        {'name': 'د. أحمد الموسوي', 'specialty': 'حشوات وعلاج عصب', 'phone': '+964 780 987 6543', 'email': 'ahmed@lumina.clinic', 'color_hex': '#00897B', 'created_at': now},
       ];
 
       for (var d in defaultDoctors) {
@@ -265,10 +274,9 @@ CREATE TABLE secretaries (
         {'name': 'Root Canal (RCT)', 'default_fee': 180.0, 'currency': 'USD', 'default_visits': 3, 'is_active': 1},
         {'name': 'Extraction', 'default_fee': 70.0, 'currency': 'USD', 'default_visits': 1, 'is_active': 1},
         {'name': 'Crown', 'default_fee': 250.0, 'currency': 'USD', 'default_visits': 2, 'is_active': 1},
-        {'name': 'Bridge', 'default_fee': 350.0, 'currency': 'USD', 'default_visits': 2, 'is_active': 1},
+        {'name': 'Implant', 'default_fee': 800.0, 'currency': 'USD', 'default_visits': 4, 'is_active': 1},
+        {'name': 'Veneer', 'default_fee': 300.0, 'currency': 'USD', 'default_visits': 2, 'is_active': 1},
         {'name': 'Scaling & Polishing', 'default_fee': 40.0, 'currency': 'USD', 'default_visits': 1, 'is_active': 1},
-        {'name': 'Implant', 'default_fee': 400.0, 'currency': 'USD', 'default_visits': 3, 'is_active': 1},
-        {'name': 'Veneer', 'default_fee': 200.0, 'currency': 'USD', 'default_visits': 2, 'is_active': 1},
       ];
 
       for (var p in defaultProcedures) {
@@ -282,9 +290,9 @@ CREATE TABLE secretaries (
     if (countResult == 0) {
       final now = DateTime.now().toIso8601String();
       await db.insert('secretaries', {
-        'name': 'Hadeel Kareem',
-        'phone': '+1 (555) 987-6543',
-        'username': 'secretary1',
+        'name': 'الاستقبال',
+        'phone': '+964 770 000 1111',
+        'username': 'secretary',
         'password': '123',
         'is_active': 1,
         'created_at': now,
@@ -292,109 +300,74 @@ CREATE TABLE secretaries (
     }
   }
 
-  // --- Doctors ---
-  Future<Doctor> createDoctor(Doctor doctor) async {
+  // --- Doctors CRUD ---
+  Future<List<Map<String, dynamic>>> getDoctors() async {
     final db = await instance.database;
-    final id = await db.insert('doctors', doctor.toMap());
-    return doctor.copyWith(id: id);
+    return await db.query('doctors', orderBy: 'id ASC');
   }
 
-  Future<List<Doctor>> readAllDoctors() async {
+  Future<int> insertDoctor(Map<String, dynamic> doctorMap) async {
     final db = await instance.database;
-    const orderBy = 'name ASC';
-    final result = await db.query('doctors', orderBy: orderBy);
-    return result.map((json) => Doctor.fromMap(json)).toList();
+    return await db.insert('doctors', doctorMap);
   }
 
-  Future<int> updateDoctor(Doctor doctor) async {
+  Future<int> updateDoctor(int id, Map<String, dynamic> doctorMap) async {
     final db = await instance.database;
-    return db.update(
-      'doctors',
-      doctor.toMap(),
-      where: 'id = ?',
-      whereArgs: [doctor.id],
-    );
+    return await db.update('doctors', doctorMap, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> deleteDoctor(int id) async {
     final db = await instance.database;
-    return db.delete('doctors', where: 'id = ?', whereArgs: [id]);
+    return await db.delete('doctors', where: 'id = ?', whereArgs: [id]);
   }
 
-  // --- Procedure Settings ---
-  Future<ProcedureSetting> createProcedureSetting(ProcedureSetting proc) async {
+  // --- Procedures Settings CRUD ---
+  Future<List<Map<String, dynamic>>> getProcedureSettings() async {
     final db = await instance.database;
-    final id = await db.insert('procedure_settings', proc.toMap());
-    return proc.copyWith(id: id);
+    return await db.query('procedure_settings', orderBy: 'id ASC');
   }
 
-  Future<List<ProcedureSetting>> readAllProcedureSettings() async {
+  Future<int> insertProcedureSetting(Map<String, dynamic> procMap) async {
     final db = await instance.database;
-    const orderBy = 'name ASC';
-    final result = await db.query('procedure_settings', orderBy: orderBy);
-    return result.map((json) => ProcedureSetting.fromMap(json)).toList();
+    return await db.insert('procedure_settings', procMap);
   }
 
-  Future<int> updateProcedureSetting(ProcedureSetting proc) async {
+  Future<int> updateProcedureSetting(int id, Map<String, dynamic> procMap) async {
     final db = await instance.database;
-    return db.update(
-      'procedure_settings',
-      proc.toMap(),
-      where: 'id = ?',
-      whereArgs: [proc.id],
-    );
+    return await db.update('procedure_settings', procMap, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> deleteProcedureSetting(int id) async {
     final db = await instance.database;
-    return db.delete('procedure_settings', where: 'id = ?', whereArgs: [id]);
+    return await db.delete('procedure_settings', where: 'id = ?', whereArgs: [id]);
   }
 
-  // --- Secretaries ---
-  Future<Secretary> createSecretary(Secretary sec) async {
+  // --- Secretaries CRUD ---
+  Future<List<Map<String, dynamic>>> getSecretaries() async {
     final db = await instance.database;
-    final id = await db.insert('secretaries', sec.toMap());
-    return sec.copyWith(id: id);
+    return await db.query('secretaries', orderBy: 'id ASC');
   }
 
-  Future<List<Secretary>> readAllSecretaries() async {
+  Future<int> insertSecretary(Map<String, dynamic> secMap) async {
     final db = await instance.database;
-    const orderBy = 'name ASC';
-    final result = await db.query('secretaries', orderBy: orderBy);
-    return result.map((json) => Secretary.fromMap(json)).toList();
+    return await db.insert('secretaries', secMap);
   }
 
-  Future<int> updateSecretary(Secretary sec) async {
+  Future<int> updateSecretary(int id, Map<String, dynamic> secMap) async {
     final db = await instance.database;
-    return db.update(
-      'secretaries',
-      sec.toMap(),
-      where: 'id = ?',
-      whereArgs: [sec.id],
-    );
+    return await db.update('secretaries', secMap, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> deleteSecretary(int id) async {
     final db = await instance.database;
-    return db.delete('secretaries', where: 'id = ?', whereArgs: [id]);
+    return await db.delete('secretaries', where: 'id = ?', whereArgs: [id]);
   }
 
-  // --- Patients ---
+  // --- Patients CRUD ---
   Future<Patient> createPatient(Patient patient) async {
     final db = await instance.database;
     final id = await db.insert('patients', patient.toMap());
-    return Patient(
-      id: id,
-      name: patient.name,
-      age: patient.age,
-      gender: patient.gender,
-      createdAt: patient.createdAt,
-      phone: patient.phone,
-      address: patient.address,
-      emergencyContact: patient.emergencyContact,
-      emergencyPhone: patient.emergencyPhone,
-      dateOfBirth: patient.dateOfBirth,
-    );
+    return patient.copyWith(id: id);
   }
 
   Future<int> updatePatient(Patient patient) async {

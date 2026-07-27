@@ -270,18 +270,15 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
           }
         }
 
-        final paymentSummary = _chargeConsultationFee
-            ? 'Fee: ${settings.formatCurrency(_consultationFee)} | Paid: ${settings.formatCurrency(_paidToday)} | Bal: ${settings.formatCurrency(_remainingBalance)} (${settings.translate(_paymentMethod)})'
-            : settings.translate('No Consultation Fee');
-
-        final combinedNotes = [
-          if (_appointmentType.isNotEmpty) '${settings.translate("Type:")} ${settings.translate(_appointmentType)}',
-          if (_selectedDoctor.isNotEmpty) '${settings.translate("Doctor:")} $_selectedDoctor',
-          if (_adminNotes.isNotEmpty) _adminNotes,
-          paymentSummary,
-        ].join(' • ');
-
-        final appointment = await provider.addAppointment(patient.id!, fullDateTime, combinedNotes);
+        final appointment = await provider.addAppointment(
+          patient.id!,
+          fullDateTime,
+          _adminNotes,
+          appointmentType: _appointmentType,
+          doctorName: _selectedDoctor,
+          consultationFee: _chargeConsultationFee ? _consultationFee : 0.0,
+          paidAmount: _chargeConsultationFee ? _paidToday : 0.0,
+        );
 
         if (_appointmentStatus != 'Scheduled') {
           await provider.updateAppointment(appointment.copyWith(status: _appointmentStatus));

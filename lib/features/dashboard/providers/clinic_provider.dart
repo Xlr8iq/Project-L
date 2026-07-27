@@ -35,10 +35,8 @@ class ClinicProvider extends ChangeNotifier {
     } else {
       if (doctors.isEmpty) {
         doctors = [
-          Doctor(id: 1, name: 'Dr. Ahmed Al-Mousawi', specialty: 'Endodontics & Restorative'),
-          Doctor(id: 2, name: 'Dr. Michael Chen', specialty: 'Orthodontics & General'),
-          Doctor(id: 3, name: 'Dr. Emily Taylor', specialty: 'Prosthodontics & Cosmetic'),
-          Doctor(id: 4, name: 'Dr. Alex Smith', specialty: 'Oral Surgery & Implants'),
+          Doctor(id: 1, name: 'د. أبو الحسن', specialty: 'طب وجراحة الأسنان'),
+          Doctor(id: 2, name: 'د. أحمد الموسوي', specialty: 'حشوات وعلاج عصب'),
         ];
       }
       if (procedures.isEmpty) {
@@ -342,13 +340,29 @@ class ClinicProvider extends ChangeNotifier {
 
   // ─── Appointment CRUD ───
 
-  Future<Appointment> addAppointment(int patientId, DateTime dateTime, String notes) async {
+  Future<Appointment> addAppointment(
+    int patientId,
+    DateTime dateTime,
+    String notes, {
+    String appointmentType = 'Consultation',
+    String doctorName = '',
+    double consultationFee = 0.0,
+    double paidAmount = 0.0,
+  }) async {
     Appointment newAppt;
+    final apptObj = Appointment(
+      patientId: patientId,
+      dateTime: dateTime,
+      notes: notes,
+      appointmentType: appointmentType,
+      doctorName: doctorName,
+      consultationFee: consultationFee,
+      paidAmount: paidAmount,
+    );
     if (kIsWeb) {
-      newAppt = Appointment(id: _webIdCounter++, patientId: patientId, dateTime: dateTime, notes: notes);
+      newAppt = apptObj.copyWith(id: _webIdCounter++);
     } else {
-      final a = Appointment(patientId: patientId, dateTime: dateTime, notes: notes);
-      newAppt = await DatabaseHelper.instance.createAppointment(a);
+      newAppt = await DatabaseHelper.instance.createAppointment(apptObj);
     }
     appointments.add(newAppt);
     appointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));

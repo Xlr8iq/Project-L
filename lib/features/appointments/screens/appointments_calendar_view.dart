@@ -181,7 +181,15 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                   final patient = provider.getPatientById(appointment.patientId);
                   if (patient == null) return const SizedBox.shrink();
 
-                  final doctorDisplay = provider.doctors.isNotEmpty ? provider.doctors.first.name : '';
+                  final activeDoctorName = appointment.doctorName.isNotEmpty
+                      ? appointment.doctorName
+                      : (provider.doctors.isNotEmpty ? provider.doctors.first.name : '');
+
+                  final feeStatusText = appointment.consultationFee > 0
+                      ? (appointment.paidAmount >= appointment.consultationFee
+                          ? settings.translate('Paid')
+                          : settings.formatCurrency(appointment.consultationFee))
+                      : settings.translate('Free');
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16.0),
@@ -214,16 +222,21 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${settings.translate("Type:")} ${settings.translate(appointment.notes.isNotEmpty ? appointment.notes : "Checkup / Consultation")}',
+                                    '${settings.translate("Type:")} ${settings.translate(appointment.appointmentType)}',
                                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                                   ),
-                                  if (doctorDisplay.isNotEmpty) ...[
+                                  if (activeDoctorName.isNotEmpty) ...[
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${settings.translate("Doctor:")} $doctorDisplay',
+                                      '${settings.translate("Doctor:")} $activeDoctorName',
                                       style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                                     ),
                                   ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${settings.translate("Consultation Fee:")} $feeStatusText',
+                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                                  ),
                                 ],
                               ),
                             ),

@@ -172,6 +172,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           final patient = provider.getPatientById(appointment.patientId);
                           if (patient == null) return const SizedBox.shrink();
 
+                          final activeDoctorName = appointment.doctorName.isNotEmpty
+                              ? appointment.doctorName
+                              : (provider.doctors.isNotEmpty ? provider.doctors.first.name : '');
+
+                          final feeStatusText = appointment.consultationFee > 0
+                              ? (appointment.paidAmount >= appointment.consultationFee
+                                  ? settings.translate('Paid')
+                                  : settings.formatCurrency(appointment.consultationFee))
+                              : settings.translate('Free');
+
+                          final subtitleText = '${settings.translate("Type:")} ${settings.translate(appointment.appointmentType)}${activeDoctorName.isNotEmpty ? " • ${settings.translate("Doctor:")} $activeDoctorName" : ""} • ${settings.translate("Consultation Fee:")} $feeStatusText';
+
                           return ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             leading: Container(
@@ -196,7 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              appointment.notes.isNotEmpty ? appointment.notes : settings.translate('Check-up'),
+                              subtitleText,
                               style: const TextStyle(color: AppTheme.textSecondary),
                             ),
                             trailing: ElevatedButton.icon(
