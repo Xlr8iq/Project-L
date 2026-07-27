@@ -40,12 +40,12 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   String get currencySymbol {
-    if (currency == 'IQD') return 'IQD';
+    if (currency == 'IQD') return isArabic ? 'ع.د' : 'IQD';
     return 'USD (\$)';
   }
 
   String get currencySuffix {
-    if (currency == 'IQD') return 'IQD';
+    if (currency == 'IQD') return isArabic ? 'د.ع' : 'IQD';
     return '\$';
   }
 
@@ -54,9 +54,33 @@ class SettingsProvider extends ChangeNotifier {
     final formattedNum = formatter.format(amount.round());
     if (!showSymbol) return formattedNum;
     if (currency == 'IQD') {
-      return '$formattedNum IQD';
+      return isArabic ? '$formattedNum د.ع' : '$formattedNum IQD';
     }
     return '\$$formattedNum';
+  }
+
+  String formatDate(DateTime date) {
+    if (isArabic) {
+      final monthsAr = [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      ];
+      return '${date.day} ${monthsAr[date.month - 1]} ${date.year}';
+    } else {
+      return DateFormat('MMMM dd, yyyy').format(date);
+    }
+  }
+
+  String formatDateShort(DateTime date) {
+    if (isArabic) {
+      final monthsAr = [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      ];
+      return '${date.day} ${monthsAr[date.month - 1]}';
+    } else {
+      return DateFormat('MMM dd').format(date);
+    }
   }
 
   String translate(String key) {

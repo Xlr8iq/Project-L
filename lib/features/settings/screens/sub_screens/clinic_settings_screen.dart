@@ -76,7 +76,7 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(provider.translate('Clinic Information')),
+        title: Text(provider.translate('Clinic Settings')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -97,29 +97,8 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                             const Icon(Icons.local_hospital, color: AppTheme.primaryBlue, size: 28),
                             const SizedBox(width: 12),
                             Text(
-                              provider.translate('Clinic Details & Branding'),
+                              provider.translate('General Information'),
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Text(provider.translate('Language:'), style: const TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(width: 8),
-                            ChoiceChip(
-                              label: const Text('English'),
-                              selected: !provider.isArabic,
-                              onSelected: (val) {
-                                if (val) provider.updateSettings({'is_arabic': false});
-                              },
-                            ),
-                            const SizedBox(width: 4),
-                            ChoiceChip(
-                              label: const Text('العربية'),
-                              selected: provider.isArabic,
-                              onSelected: (val) {
-                                if (val) provider.updateSettings({'is_arabic': true});
-                              },
                             ),
                           ],
                         ),
@@ -128,6 +107,54 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                     const SizedBox(height: 24),
                     const Divider(color: AppTheme.borderLight),
                     const SizedBox(height: 20),
+
+                    // Language Selection Box
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBlue.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            provider.translate('System Language'),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: RadioListTile<bool>(
+                                  title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  value: false,
+                                  groupValue: provider.isArabic,
+                                  activeColor: AppTheme.primaryBlue,
+                                  onChanged: (val) {
+                                    if (val != null) provider.updateSettings({'is_arabic': false});
+                                  },
+                                ),
+                              ),
+                              Expanded(
+                                child: RadioListTile<bool>(
+                                  title: const Text('العربية', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  value: true,
+                                  groupValue: provider.isArabic,
+                                  activeColor: AppTheme.primaryBlue,
+                                  onChanged: (val) {
+                                    if (val != null) provider.updateSettings({'is_arabic': true});
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
 
                     // Logo Uploader
                     Text(
@@ -167,7 +194,7 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                     TextField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Clinic Name'),
+                        labelText: provider.translate('Clinic Name *'),
                         prefixIcon: const Icon(Icons.local_hospital_outlined),
                       ),
                     ),
@@ -176,7 +203,7 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                     TextField(
                       controller: _addressController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Address'),
+                        labelText: provider.translate('Address *'),
                         prefixIcon: const Icon(Icons.location_on_outlined),
                       ),
                       maxLines: 2,
@@ -189,7 +216,7 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                           child: TextField(
                             controller: _phoneController,
                             decoration: InputDecoration(
-                              labelText: provider.translate('Phone Number'),
+                              labelText: provider.translate('Phone Number *'),
                               prefixIcon: const Icon(Icons.phone_outlined),
                             ),
                           ),
@@ -199,7 +226,7 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                           child: TextField(
                             controller: _emailController,
                             decoration: InputDecoration(
-                              labelText: provider.translate('Email (Optional)'),
+                              labelText: provider.translate('Email Address (Optional)'),
                               prefixIcon: const Icon(Icons.email_outlined),
                             ),
                           ),
@@ -207,12 +234,12 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // Currency Selector
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
-                        labelText: provider.translate('Clinic Currency'),
+                        labelText: provider.translate('System Currency'),
                         prefixIcon: const Icon(Icons.monetization_on_outlined),
                       ),
                       initialValue: _currency,

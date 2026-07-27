@@ -7,6 +7,7 @@ import '../providers/odontogram_provider.dart';
 import '../widgets/palmer_chart.dart';
 import '../widgets/tooth_detail_panel.dart';
 import '../../treatment_plan/dialogs/procedure_execution_dialog.dart';
+import '../../dashboard/providers/settings_provider.dart';
 
 class ChartingScreen extends StatefulWidget {
   final Patient? patient;
@@ -55,6 +56,8 @@ class _ChartingScreenState extends State<ChartingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+
     return ChangeNotifierProvider.value(
       value: _provider,
       child: Scaffold(
@@ -70,9 +73,9 @@ class _ChartingScreenState extends State<ChartingScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Clinical Dental Chart',
-                style: TextStyle(
+              Text(
+                settings.translate('Clinical Dental Chart'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -80,8 +83,8 @@ class _ChartingScreenState extends State<ChartingScreen> {
               ),
               Text(
                 widget.patient != null
-                    ? 'Palmer Notation • ${widget.patient!.name}'
-                    : 'Palmer Notation • Select a tooth',
+                    ? '${settings.translate("Palmer Notation •")} ${widget.patient!.name}'
+                    : settings.translate('Palmer Notation • Select a tooth'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withOpacity(0.85),
@@ -113,7 +116,7 @@ class _ChartingScreenState extends State<ChartingScreen> {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(value: 'save', child: Text('Save & Return to Treatment Plan')),
+                PopupMenuItem(value: 'save', child: Text(settings.translate('Save & Return to Treatment Plan'))),
               ],
             ),
             const SizedBox(width: 8),

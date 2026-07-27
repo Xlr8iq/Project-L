@@ -20,6 +20,7 @@ class ToothDetailPanel extends StatelessWidget {
     required ProcedureType type,
     required Tooth tooth,
     required OdontogramProvider provider,
+    required SettingsProvider settings,
   }) {
     final isSelected = tooth.procedure == type;
 
@@ -43,7 +44,7 @@ class ToothDetailPanel extends StatelessWidget {
             Icon(icon, color: color, size: 18),
             const SizedBox(height: 2),
             Text(
-              label,
+              settings.translate(label),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -66,6 +67,8 @@ class ToothDetailPanel extends StatelessWidget {
         final toothNumber = provider.selectedTooth ?? 1;
         final tooth = provider.getTooth(toothNumber);
         final hasDraftItems = provider.draftProcedures.isNotEmpty;
+
+        final translatedToothName = '${settings.translate(tooth.quadrantName)} ${settings.translate(tooth.toothTypeName)}';
 
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -206,7 +209,7 @@ class ToothDetailPanel extends StatelessWidget {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        tooth.fullName,
+                                        translatedToothName,
                                         style: const TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.bold,
@@ -221,15 +224,15 @@ class ToothDetailPanel extends StatelessWidget {
 
                                 Row(
                                   children: [
-                                    _buildMetadataChip('Quadrant', tooth.quadrantName),
+                                    _buildMetadataChip(settings.translate('Quadrant'), settings.translate(tooth.quadrantName)),
                                     const SizedBox(width: 12),
                                     const SizedBox(height: 24, child: VerticalDivider(width: 1, color: Color(0xFFCBD5E1))),
                                     const SizedBox(width: 12),
-                                    _buildMetadataChip('Tooth Type', tooth.toothTypeName),
+                                    _buildMetadataChip(settings.translate('Tooth Type'), settings.translate(tooth.toothTypeName)),
                                     const SizedBox(width: 12),
                                     const SizedBox(height: 24, child: VerticalDivider(width: 1, color: Color(0xFFCBD5E1))),
                                     const SizedBox(width: 12),
-                                    _buildMetadataChip('Dentition', tooth.dentition),
+                                    _buildMetadataChip(settings.translate('Dentition'), settings.translate(tooth.dentition)),
                                   ],
                                 ),
                               ],
@@ -268,6 +271,7 @@ class ToothDetailPanel extends StatelessWidget {
                                       type: ProcedureType.restoration,
                                       tooth: tooth,
                                       provider: provider,
+                                      settings: settings,
                                     ),
                                     _buildProcedureCard(
                                       context: context,
@@ -277,6 +281,7 @@ class ToothDetailPanel extends StatelessWidget {
                                       type: ProcedureType.endo,
                                       tooth: tooth,
                                       provider: provider,
+                                      settings: settings,
                                     ),
                                     _buildProcedureCard(
                                       context: context,
@@ -286,6 +291,7 @@ class ToothDetailPanel extends StatelessWidget {
                                       type: ProcedureType.crown,
                                       tooth: tooth,
                                       provider: provider,
+                                      settings: settings,
                                     ),
                                     _buildProcedureCard(
                                       context: context,
@@ -295,6 +301,7 @@ class ToothDetailPanel extends StatelessWidget {
                                       type: ProcedureType.extraction,
                                       tooth: tooth,
                                       provider: provider,
+                                      settings: settings,
                                     ),
                                     _buildProcedureCard(
                                       context: context,
@@ -304,6 +311,7 @@ class ToothDetailPanel extends StatelessWidget {
                                       type: ProcedureType.implant,
                                       tooth: tooth,
                                       provider: provider,
+                                      settings: settings,
                                     ),
                                     _buildProcedureCard(
                                       context: context,
@@ -313,6 +321,7 @@ class ToothDetailPanel extends StatelessWidget {
                                       type: ProcedureType.veneer,
                                       tooth: tooth,
                                       provider: provider,
+                                      settings: settings,
                                     ),
                                     _buildProcedureCard(
                                       context: context,
@@ -322,6 +331,7 @@ class ToothDetailPanel extends StatelessWidget {
                                       type: ProcedureType.none,
                                       tooth: tooth,
                                       provider: provider,
+                                      settings: settings,
                                     ),
                                   ],
                                 ),
@@ -355,11 +365,11 @@ class ToothDetailPanel extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    tooth.fullName,
+                                    translatedToothName,
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                                   ),
                                   Text(
-                                    '${tooth.quadrantName} • ${tooth.dentition}',
+                                    '${settings.translate(tooth.quadrantName)} • ${settings.translate(tooth.dentition)}',
                                     style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                                   ),
                                 ],
@@ -385,6 +395,7 @@ class ToothDetailPanel extends StatelessWidget {
                               type: ProcedureType.restoration,
                               tooth: tooth,
                               provider: provider,
+                              settings: settings,
                             ),
                             _buildProcedureCard(
                               context: context,
@@ -394,6 +405,7 @@ class ToothDetailPanel extends StatelessWidget {
                               type: ProcedureType.endo,
                               tooth: tooth,
                               provider: provider,
+                              settings: settings,
                             ),
                             _buildProcedureCard(
                               context: context,
@@ -403,6 +415,7 @@ class ToothDetailPanel extends StatelessWidget {
                               type: ProcedureType.crown,
                               tooth: tooth,
                               provider: provider,
+                              settings: settings,
                             ),
                             _buildProcedureCard(
                               context: context,
@@ -412,6 +425,7 @@ class ToothDetailPanel extends StatelessWidget {
                               type: ProcedureType.extraction,
                               tooth: tooth,
                               provider: provider,
+                              settings: settings,
                             ),
                             _buildProcedureCard(
                               context: context,
@@ -421,6 +435,7 @@ class ToothDetailPanel extends StatelessWidget {
                               type: ProcedureType.implant,
                               tooth: tooth,
                               provider: provider,
+                              settings: settings,
                             ),
                             _buildProcedureCard(
                               context: context,
@@ -430,6 +445,7 @@ class ToothDetailPanel extends StatelessWidget {
                               type: ProcedureType.veneer,
                               tooth: tooth,
                               provider: provider,
+                              settings: settings,
                             ),
                           ],
                         ),

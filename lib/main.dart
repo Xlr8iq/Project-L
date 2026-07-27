@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'core/theme.dart';
@@ -34,10 +35,22 @@ class DentalClinicApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
+        final currentLocale = settings.isArabic ? const Locale('ar', '') : const Locale('en', '');
+
         return MaterialApp(
           title: 'Lumina',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
+          locale: currentLocale,
+          supportedLocales: const [
+            Locale('en', ''),
+            Locale('ar', ''),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           builder: (context, child) {
             return Directionality(
               textDirection: settings.isArabic ? TextDirection.rtl : TextDirection.ltr,
