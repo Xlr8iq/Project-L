@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
-import '../../odontogram/screens/charting_screen.dart';
 import '../../appointments/screens/add_appointment_screen.dart';
 import '../../appointments/screens/appointments_calendar_view.dart';
 import '../../patients/screens/patient_profile_screen.dart';
+import '../../treatment_plan/screens/treatment_plan_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../providers/clinic_provider.dart';
 import '../providers/settings_provider.dart';
@@ -200,14 +200,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               appointment.notes.isNotEmpty ? appointment.notes : settings.translate('Check-up'),
                               style: const TextStyle(color: AppTheme.textSecondary),
                             ),
-                            trailing: OutlinedButton(
+                            trailing: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryBlue,
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: const Icon(Icons.assignment, size: 16),
+                              label: Text(settings.translate('Open Treatment Plan')),
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => ChartingScreen(patient: patient)),
+                                  MaterialPageRoute(builder: (_) => TreatmentPlanScreen(patient: patient)),
                                 );
                               },
-                              child: Text(settings.translate('Open Chart')),
                             ),
                           );
                         },

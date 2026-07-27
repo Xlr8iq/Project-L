@@ -7,7 +7,6 @@ import '../../../core/models/treatment_plan_item.dart';
 import '../../dashboard/providers/clinic_provider.dart';
 import '../../dashboard/providers/settings_provider.dart';
 import '../../odontogram/screens/charting_screen.dart';
-import '../dialogs/procedure_execution_dialog.dart';
 
 class TreatmentPlanScreen extends StatefulWidget {
   final Patient patient;
@@ -48,15 +47,22 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
     return items;
   }
 
-  void _openProcedureExecution(BuildContext context, TreatmentPlanItem item) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => ProcedureExecutionDialog(
-        patient: widget.patient,
-        item: item,
+  void _openProcedureChart(BuildContext context, TreatmentPlanItem item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChartingScreen(
+          patient: widget.patient,
+          targetToothNumber: item.toothNumber,
+          targetTreatmentItem: item,
+        ),
       ),
-    );
+    ).then((_) {
+      // Reload treatment plan when returning to the Treatment Plan screen
+      if (mounted) {
+        Provider.of<ClinicProvider>(context, listen: false).loadTreatmentPlan(widget.patient.id!);
+      }
+    });
   }
 
   void _confirmDeleteItem(BuildContext context, TreatmentPlanItem item) {
@@ -110,7 +116,11 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                     MaterialPageRoute(
                       builder: (_) => ChartingScreen(patient: widget.patient),
                     ),
-                  );
+                  ).then((_) {
+                    if (mounted) {
+                      Provider.of<ClinicProvider>(context, listen: false).loadTreatmentPlan(widget.patient.id!);
+                    }
+                  });
                 },
               ),
             ),
@@ -124,7 +134,6 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
           final plannedCount = allItems.where((i) => i.status == TreatmentPlanStatus.planned || i.status == TreatmentPlanStatus.scheduled).length;
           final inProgressCount = allItems.where((i) => i.status == TreatmentPlanStatus.inProgress || i.status == TreatmentPlanStatus.waitingForLab).length;
           final completedCount = allItems.where((i) => i.status == TreatmentPlanStatus.completed).length;
-          final totalEst = allItems.fold<double>(0.0, (sum, i) => sum + i.estimatedFee);
           final totalRem = allItems.fold<double>(0.0, (sum, i) => sum + i.remainingBalance);
 
           return Column(
@@ -291,175 +300,174 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
           width: isDone ? 1.5 : 1.0,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: item.statusColor.withOpacity(0.1),
-                    shape: BoxShape.circle,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _openProcedureChart(context, item),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: item.statusColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(item.statusIcon, color: item.statusColor, size: 28),
                   ),
-                  child: Icon(item.statusIcon, color: item.statusColor, size: 28),
-                ),
-                const SizedBox(width: 16),
+                  const SizedBox(width: 16),
 
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            item.procedureName,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryBlue.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              item.procedureName,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                             ),
-                            child: Text(
-                              '${settings.translate("Tooth")}: ${item.palmerDisplay}',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryBlue.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
+                              ),
+                              child: Text(
+                                '${settings.translate("Tooth")}: ${item.palmerDisplay}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: item.statusColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(item.statusIcon, size: 14, color: item.statusColor),
-                                const SizedBox(width: 6),
-                                Text(
-                                  settings.translate(item.statusDisplay),
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.statusColor),
+                            if (item.totalVisits > 1) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.purple.withOpacity(0.3)),
                                 ),
-                              ],
-                            ),
-                          ),
-                          if (item.nextVisitDate != null && !isDone) ...[
-                            const SizedBox(width: 16),
-                            Row(
-                              children: [
-                                const Icon(Icons.event, size: 16, color: AppTheme.textSecondary),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${settings.translate("Next Visit")}: ${DateFormat('MMM dd, yyyy').format(item.nextVisitDate!)}',
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
+                                child: Text(
+                                  'Visit ${item.currentVisit} of ${item.totalVisits}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purple),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-
-                      if (item.notes.isNotEmpty) ...[
+                        ),
                         const SizedBox(height: 8),
+
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: item.statusColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(item.statusIcon, size: 14, color: item.statusColor),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    settings.translate(item.statusDisplay),
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.statusColor),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (item.nextVisitDate != null && !isDone) ...[
+                              const SizedBox(width: 16),
+                              Row(
+                                children: [
+                                  const Icon(Icons.event, size: 16, color: AppTheme.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${settings.translate("Next Visit")}: ${DateFormat('MMM dd, yyyy').format(item.nextVisitDate!)}',
+                                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+
+                        if (item.notes.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Notes: ${item.notes}',
+                            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        settings.formatCurrency(item.estimatedFee),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      ),
+                      if (item.remainingBalance > 0)
                         Text(
-                          'Notes: ${item.notes}',
-                          style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                          'Rem: ${settings.formatCurrency(item.remainingBalance)}',
+                          style: TextStyle(fontSize: 12, color: Colors.orange.shade800, fontWeight: FontWeight.w600),
+                        )
+                      else
+                        Text(
+                          settings.translate('Paid in Full'),
+                          style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.w600),
+                        ),
+                      const SizedBox(height: 12),
+
+                      if (!widget.isReadOnly) ...[
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDone ? Colors.green.shade700 : AppTheme.primaryBlue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          ),
+                          icon: Icon(isDone ? Icons.check_circle : Icons.play_arrow, size: 16),
+                          label: Text(
+                            isDone ? settings.translate('View Details') : (item.totalVisits > 1 ? 'Perform Visit ${item.currentVisit}' : settings.translate('Perform Procedure')),
+                          ),
+                          onPressed: () => _openProcedureChart(context, item),
                         ),
                       ],
                     ],
                   ),
-                ),
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      settings.formatCurrency(item.estimatedFee),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                  if (!widget.isReadOnly) ...[
+                    const SizedBox(width: 8),
+                    PopupMenuButton<String>(
+                      onSelected: (val) {
+                        if (val == 'delete') _confirmDeleteItem(context, item);
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                              const SizedBox(width: 8),
+                              Text(settings.translate('Delete Procedure')),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    if (item.remainingBalance > 0)
-                      Text(
-                        'Rem: ${settings.formatCurrency(item.remainingBalance)}',
-                        style: TextStyle(fontSize: 12, color: Colors.orange.shade800, fontWeight: FontWeight.w600),
-                      )
-                    else
-                      Text(
-                        settings.translate('Paid in Full'),
-                        style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.w600),
-                      ),
-                    const SizedBox(height: 12),
-
-                    if (!widget.isReadOnly) ...[
-                      if (item.status == TreatmentPlanStatus.planned)
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          ),
-                          icon: const Icon(Icons.play_arrow, size: 16),
-                          label: Text(settings.translate('Start Today\'s Treatment')),
-                          onPressed: () => _openProcedureExecution(context, item),
-                        )
-                      else if (item.status == TreatmentPlanStatus.inProgress || item.status == TreatmentPlanStatus.scheduled)
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFF57C00),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          ),
-                          icon: const Icon(Icons.play_arrow, size: 16),
-                          label: Text('${settings.translate("Perform Visit")} ${item.currentVisit}'),
-                          onPressed: () => _openProcedureExecution(context, item),
-                        )
-                      else if (item.status == TreatmentPlanStatus.completed)
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                          label: Text(settings.translate('Completed ✓')),
-                          onPressed: () => _openProcedureExecution(context, item),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.green.shade800,
-                            side: BorderSide(color: Colors.green.shade400),
-                          ),
-                        ),
-                    ],
                   ],
-                ),
-
-                if (!widget.isReadOnly) ...[
-                  const SizedBox(width: 8),
-                  PopupMenuButton<String>(
-                    onSelected: (val) {
-                      if (val == 'delete') _confirmDeleteItem(context, item);
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                            const SizedBox(width: 8),
-                            Text(settings.translate('Delete Procedure')),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

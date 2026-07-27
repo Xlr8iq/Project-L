@@ -2,25 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
+import '../../../core/models/treatment_plan_item.dart';
 import '../providers/odontogram_provider.dart';
 import '../widgets/palmer_chart.dart';
 import '../widgets/tooth_detail_panel.dart';
+import '../../treatment_plan/dialogs/procedure_execution_dialog.dart';
 
-class ChartingScreen extends StatelessWidget {
+class ChartingScreen extends StatefulWidget {
   final Patient? patient;
-  
-  const ChartingScreen({Key? key, this.patient}) : super(key: key);
+  final int? targetToothNumber;
+  final TreatmentPlanItem? targetTreatmentItem;
+
+  const ChartingScreen({
+    Key? key,
+    this.patient,
+    this.targetToothNumber,
+    this.targetTreatmentItem,
+  }) : super(key: key);
+
+  @override
+  State<ChartingScreen> createState() => _ChartingScreenState();
+}
+
+class _ChartingScreenState extends State<ChartingScreen> {
+  late OdontogramProvider _provider;
+
+  @override
+  void initState() {
+    super.initState();
+    _provider = OdontogramProvider();
+    if (widget.patient != null && widget.patient!.id != null) {
+      _provider.loadChart(widget.patient!.id!);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.targetToothNumber != null) {
+        _provider.selectTooth(widget.targetToothNumber!);
+      }
+
+      if (widget.patient != null && widget.targetTreatmentItem != null) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => ProcedureExecutionDialog(
+            patient: widget.patient!,
+            item: widget.targetTreatmentItem!,
+          ),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) {
-        final provider = OdontogramProvider();
-        if (patient != null && patient!.id != null) {
-          provider.loadChart(patient!.id!);
-        }
-        return provider;
-      },
+    return ChangeNotifierProvider.value(
+      value: _provider,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
@@ -43,8 +79,8 @@ class ChartingScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                patient != null
-                    ? 'Palmer Notation • ${patient!.name}'
+                widget.patient != null
+                    ? 'Palmer Notation • ${widget.patient!.name}'
                     : 'Palmer Notation • Select a tooth',
                 style: TextStyle(
                   fontSize: 12,
@@ -77,7 +113,7 @@ class ChartingScreen extends StatelessWidget {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(value: 'save', child: Text('Save & Close')),
+                const PopupMenuItem(value: 'save', child: Text('Save & Return to Treatment Plan')),
               ],
             ),
             const SizedBox(width: 8),
