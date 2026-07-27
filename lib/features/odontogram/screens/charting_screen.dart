@@ -96,17 +96,17 @@ class _ChartingScreenState extends State<ChartingScreen> {
             IconButton(
               icon: const Icon(Icons.crop_free, color: Colors.white),
               onPressed: () {},
-              tooltip: 'Fullscreen',
+              tooltip: settings.translate('Fullscreen'),
             ),
             IconButton(
               icon: const Icon(Icons.zoom_in, color: Colors.white),
               onPressed: () {},
-              tooltip: 'Zoom In',
+              tooltip: settings.translate('Zoom In'),
             ),
             IconButton(
               icon: const Icon(Icons.zoom_out, color: Colors.white),
               onPressed: () {},
-              tooltip: 'Zoom Out',
+              tooltip: settings.translate('Zoom Out'),
             ),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),

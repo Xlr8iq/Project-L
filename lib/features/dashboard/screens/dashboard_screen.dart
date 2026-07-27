@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../appointments/screens/add_appointment_screen.dart';
@@ -182,7 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                DateFormat('hh:mm a').format(appointment.dateTime),
+                                settings.formatTime(appointment.dateTime),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.primaryBlue,
@@ -220,10 +219,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ],
-          ),
-        );
-      }
-    );
+          );
+        },
+      );
   }
 
   Widget _buildAppointments() {
@@ -390,7 +388,7 @@ class _PatientDatabaseTabState extends State<_PatientDatabaseTab> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${patient.age} y/o • ${patient.gender}',
+                                    '${patient.age} ${settings.translate("Age")} • ${settings.translate(patient.gender)}',
                                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                                   ),
                                 ],

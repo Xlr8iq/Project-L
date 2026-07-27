@@ -243,9 +243,9 @@ class _ClinicSettingsScreenState extends State<ClinicSettingsScreen> {
                         prefixIcon: const Icon(Icons.monetization_on_outlined),
                       ),
                       initialValue: _currency,
-                      items: const [
-                        DropdownMenuItem(value: 'USD', child: Text('USD - United States Dollar (\$)')),
-                        DropdownMenuItem(value: 'IQD', child: Text('IQD - Iraqi Dinar (ع.د)')),
+                      items: [
+                        DropdownMenuItem(value: 'USD', child: Text(provider.isArabic ? 'دولار أمريكي (\$)' : 'USD - United States Dollar (\$)')),
+                        DropdownMenuItem(value: 'IQD', child: Text(provider.isArabic ? 'دينار عراقي (د.ع)' : 'IQD - Iraqi Dinar (IQD)')),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _currency = val);

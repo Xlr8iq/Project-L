@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
@@ -118,11 +117,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   }
 
   Future<void> _pickAppointmentDate() async {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     final picked = await showDatePicker(
       context: context,
       initialDate: _appointmentDate,
       firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: settings.isArabic ? const Locale('ar', 'SA') : const Locale('en', 'US'),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -176,13 +177,15 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   }
 
   void _submitForm() async {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+
     if (_formKey.currentState!.validate()) {
       final nameInput = _fullNameController.text.trim();
 
       if (nameInput.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please write patient name.'),
+          SnackBar(
+            content: Text(settings.translate('Please write patient name.')),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -191,8 +194,8 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
       if (_chargeConsultationFee && _paidToday > _consultationFee) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Paid Today amount cannot exceed Consultation Fee.'),
+          SnackBar(
+            content: Text(settings.translate('Paid Today amount cannot exceed Consultation Fee.')),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -210,7 +213,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       );
 
       final provider = Provider.of<ClinicProvider>(context, listen: false);
-      final settings = Provider.of<SettingsProvider>(context, listen: false);
 
       try {
         Patient patient;
@@ -269,12 +271,12 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         }
 
         final paymentSummary = _chargeConsultationFee
-            ? 'Fee: ${settings.formatCurrency(_consultationFee)} | Paid: ${settings.formatCurrency(_paidToday)} | Bal: ${settings.formatCurrency(_remainingBalance)} ($_paymentMethod)'
-            : 'No Consultation Fee';
+            ? 'Fee: ${settings.formatCurrency(_consultationFee)} | Paid: ${settings.formatCurrency(_paidToday)} | Bal: ${settings.formatCurrency(_remainingBalance)} (${settings.translate(_paymentMethod)})'
+            : settings.translate('No Consultation Fee');
 
         final combinedNotes = [
-          if (_appointmentType.isNotEmpty) 'Type: $_appointmentType',
-          if (_selectedDoctor.isNotEmpty) 'Doctor: $_selectedDoctor',
+          if (_appointmentType.isNotEmpty) '${settings.translate("Type:")} ${settings.translate(_appointmentType)}',
+          if (_selectedDoctor.isNotEmpty) '${settings.translate("Doctor:")} $_selectedDoctor',
           if (_adminNotes.isNotEmpty) _adminNotes,
           paymentSummary,
         ].join(' • ');
@@ -289,7 +291,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Appointment scheduled successfully for ${patient.name}!'),
+            content: Text('${settings.translate("Appointment scheduled successfully for")} ${patient.name}!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -298,7 +300,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving appointment: $e'),
+            content: Text('${settings.translate("Error saving appointment:")} $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -339,7 +341,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                 children: [
                   // ─── CARD 1: PATIENT ───
                   _buildCard(
-                    title: 'Patient Information',
+                    title: settings.translate('Patient Information'),
                     icon: Icons.person_outlined,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,8 +372,8 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   controller: controller,
                                   focusNode: focusNode,
                                   decoration: InputDecoration(
-                                    labelText: 'Full Name *',
-                                    hintText: 'Type patient full name (searches database automatically)...',
+                                    labelText: settings.translate('Full Name *'),
+                                    hintText: settings.translate('Type patient full name (searches database automatically)...'),
                                     prefixIcon: const Icon(Icons.person, color: AppTheme.primaryBlue),
                                     suffixIcon: controller.text.isNotEmpty
                                         ? IconButton(
@@ -380,7 +382,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                           )
                                         : null,
                                   ),
-                                  validator: (val) => val == null || val.trim().isEmpty ? 'Full Name is required' : null,
+                                  validator: (val) => val == null || val.trim().isEmpty ? settings.translate('Full Name is required') : null,
                                   onChanged: (val) {
                                     if (_selectedPatient != null && _selectedPatient!.name != val) {
                                       setState(() {
@@ -424,7 +426,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                             ),
                                             subtitle: Text(
-                                              'ID: #${option.id.toString().padLeft(4, '0')} • ${option.age} y/o • ${option.gender}${option.phone.isNotEmpty ? " • ${option.phone}" : ""}',
+                                              'ID: #${option.id.toString().padLeft(4, '0')} • ${option.age} ${settings.translate("Age")} • ${settings.translate(option.gender)}${option.phone.isNotEmpty ? " • ${option.phone}" : ""}',
                                               style: const TextStyle(fontSize: 12),
                                             ),
                                             onTap: () {
@@ -461,7 +463,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                         const Icon(Icons.check_circle, color: AppTheme.primaryBlue, size: 20),
                                         const SizedBox(width: 8),
                                         Text(
-                                          'Existing Patient: ${_selectedPatient!.name}',
+                                          '${settings.translate("Existing Patient:")} ${_selectedPatient!.name}',
                                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                                         ),
                                       ],
@@ -483,7 +485,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          _buildReadOnlyTreatmentPreview(_selectedPatient!),
+                          _buildReadOnlyTreatmentPreview(_selectedPatient!, settings),
                         ],
 
                         const SizedBox(height: 16),
@@ -493,13 +495,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             Expanded(
                               flex: 2,
                               child: DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
-                                  labelText: 'Gender *',
-                                  prefixIcon: Icon(Icons.wc),
+                                decoration: InputDecoration(
+                                  labelText: settings.translate('Gender *'),
+                                  prefixIcon: const Icon(Icons.wc),
                                 ),
                                 value: _gender,
                                 items: ['Male', 'Female', 'Other']
-                                    .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                                    .map((g) => DropdownMenuItem(value: g, child: Text(settings.translate(g))))
                                     .toList(),
                                 onChanged: (val) => setState(() => _gender = val!),
                               ),
@@ -509,15 +511,14 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               flex: 2,
                               child: TextFormField(
                                 controller: _ageController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Age *',
-                                  prefixIcon: Icon(Icons.numbers),
+                                decoration: InputDecoration(
+                                  labelText: settings.translate('Age *'),
+                                  prefixIcon: const Icon(Icons.numbers),
                                 ),
                                 keyboardType: TextInputType.number,
                                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                 validator: (val) {
-                                  if (val == null || val.trim().isEmpty) return 'Required';
-                                  if (int.tryParse(val.trim()) == null) return 'Numeric only';
+                                  if (val == null || val.trim().isEmpty) return settings.translate('Required');
                                   return null;
                                 },
                               ),
@@ -527,12 +528,12 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               flex: 3,
                               child: TextFormField(
                                 controller: _phoneController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Phone Number *',
-                                  prefixIcon: Icon(Icons.phone_outlined),
+                                decoration: InputDecoration(
+                                  labelText: settings.translate('Phone Number *'),
+                                  prefixIcon: const Icon(Icons.phone_outlined),
                                 ),
                                 keyboardType: TextInputType.phone,
-                                validator: (val) => val == null || val.trim().isEmpty ? 'Phone Number is required' : null,
+                                validator: (val) => val == null || val.trim().isEmpty ? settings.translate('Phone Number is required') : null,
                               ),
                             ),
                           ],
@@ -541,9 +542,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
                         TextFormField(
                           controller: _addressController,
-                          decoration: const InputDecoration(
-                            labelText: 'Address (Optional)',
-                            prefixIcon: Icon(Icons.home_outlined),
+                          decoration: InputDecoration(
+                            labelText: settings.translate('Address (Optional)'),
+                            prefixIcon: const Icon(Icons.home_outlined),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -553,9 +554,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             Expanded(
                               child: TextFormField(
                                 controller: _emergencyContactController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Emergency Contact Name (Optional)',
-                                  prefixIcon: Icon(Icons.contact_emergency_outlined),
+                                decoration: InputDecoration(
+                                  labelText: settings.translate('Emergency Contact Name (Optional)'),
+                                  prefixIcon: const Icon(Icons.contact_emergency_outlined),
                                 ),
                               ),
                             ),
@@ -563,9 +564,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             Expanded(
                               child: TextFormField(
                                 controller: _emergencyPhoneController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Emergency Contact Number (Optional)',
-                                  prefixIcon: Icon(Icons.phone_paused_outlined),
+                                decoration: InputDecoration(
+                                  labelText: settings.translate('Emergency Contact Number (Optional)'),
+                                  prefixIcon: const Icon(Icons.phone_paused_outlined),
                                 ),
                                 keyboardType: TextInputType.phone,
                               ),
@@ -580,7 +581,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
                   // ─── CARD 2: APPOINTMENT ───
                   _buildCard(
-                    title: 'Appointment',
+                    title: settings.translate('Appointment'),
                     icon: Icons.event_outlined,
                     child: Column(
                       children: [
@@ -589,7 +590,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             Expanded(
                               child: OutlinedButton.icon(
                                 icon: const Icon(Icons.calendar_month, color: AppTheme.primaryBlue),
-                                label: Text(DateFormat('EEE, MMM dd, yyyy').format(_appointmentDate)),
+                                label: Text(settings.formatDate(_appointmentDate)),
                                 onPressed: _pickAppointmentDate,
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.all(16),
@@ -601,7 +602,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             Expanded(
                               child: OutlinedButton.icon(
                                 icon: const Icon(Icons.access_time, color: AppTheme.primaryBlue),
-                                label: Text(_appointmentTime.format(context)),
+                                label: Text(settings.formatTime(DateTime(
+                                  _appointmentDate.year,
+                                  _appointmentDate.month,
+                                  _appointmentDate.day,
+                                  _appointmentTime.hour,
+                                  _appointmentTime.minute,
+                                ))),
                                 onPressed: _pickAppointmentTime,
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.all(16),
@@ -616,9 +623,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           children: [
                             Expanded(
                               child: DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
-                                  labelText: 'Doctor',
-                                  prefixIcon: Icon(Icons.medical_services_outlined),
+                                decoration: InputDecoration(
+                                  labelText: settings.translate('Doctor'),
+                                  prefixIcon: const Icon(Icons.medical_services_outlined),
                                 ),
                                 value: _selectedDoctor.isNotEmpty ? _selectedDoctor : null,
                                 items: doctorList
@@ -630,13 +637,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
-                                  labelText: 'Appointment Type',
-                                  prefixIcon: Icon(Icons.category_outlined),
+                                decoration: InputDecoration(
+                                  labelText: settings.translate('Appointment Type'),
+                                  prefixIcon: const Icon(Icons.category_outlined),
                                 ),
                                 value: _appointmentType,
                                 items: _appointmentTypes
-                                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                    .map((t) => DropdownMenuItem(value: t, child: Text(settings.translate(t))))
                                     .toList(),
                                 onChanged: (val) => setState(() => _appointmentType = val!),
                               ),
@@ -645,10 +652,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'Administrative Notes (Optional)',
-                            hintText: 'e.g. Patient has pain. Requested afternoon appointment.',
-                            prefixIcon: Icon(Icons.edit_note),
+                          decoration: InputDecoration(
+                            labelText: settings.translate('Administrative Notes (Optional)'),
+                            prefixIcon: const Icon(Icons.edit_note),
                           ),
                           maxLines: 2,
                           onSaved: (val) => _adminNotes = val?.trim() ?? '',
@@ -661,7 +667,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
                   // ─── CARD 3: PAYMENT ───
                   _buildCard(
-                    title: 'Payment',
+                    title: settings.translate('Payment'),
                     icon: Icons.payments_outlined,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -686,7 +692,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    'Charge Consultation Fee',
+                                    settings.translate('Charge Consultation Fee'),
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
@@ -718,13 +724,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               border: Border.all(color: Colors.green.shade300),
                             ),
                             child: Row(
-                              children: const [
-                                Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
-                                SizedBox(width: 10),
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'No payment required today (Free consultation, recall, post-op review, or pay later).',
-                                    style: TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                                    settings.translate('No payment required today (Free consultation, recall, post-op review, or pay later).'),
+                                    style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
                                   ),
                                 ),
                               ],
@@ -740,7 +746,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                 child: TextFormField(
                                   initialValue: ThousandsSeparatorInputFormatter.format(_consultationFee),
                                   decoration: InputDecoration(
-                                    labelText: 'Consultation Fee *',
+                                    labelText: settings.translate('Consultation Fee *'),
                                     suffixText: settings.currencySuffix,
                                     prefixIcon: const Icon(Icons.attach_money),
                                   ),
@@ -751,7 +757,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   ],
                                   validator: (val) {
                                     if (!_chargeConsultationFee) return null;
-                                    if (val == null || ThousandsSeparatorInputFormatter.parse(val) <= 0) return 'Required';
+                                    if (val == null || ThousandsSeparatorInputFormatter.parse(val) <= 0) return settings.translate('Required');
                                     return null;
                                   },
                                   onChanged: (val) {
@@ -766,7 +772,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                 child: TextFormField(
                                   initialValue: ThousandsSeparatorInputFormatter.format(_paidToday),
                                   decoration: InputDecoration(
-                                    labelText: 'Paid Today *',
+                                    labelText: settings.translate('Paid Today *'),
                                     suffixText: settings.currencySuffix,
                                     prefixIcon: const Icon(Icons.price_check),
                                   ),
@@ -778,7 +784,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   validator: (val) {
                                     if (!_chargeConsultationFee) return null;
                                     final paid = ThousandsSeparatorInputFormatter.parse(val ?? '');
-                                    if (paid > _consultationFee) return 'Exceeds Fee';
+                                    if (paid > _consultationFee) return settings.translate('Exceeds Fee');
                                     return null;
                                   },
                                   onChanged: (val) {
@@ -791,13 +797,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: DropdownButtonFormField<String>(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Payment Method',
-                                    prefixIcon: Icon(Icons.credit_card),
+                                  decoration: InputDecoration(
+                                    labelText: settings.translate('Payment Method'),
+                                    prefixIcon: const Icon(Icons.credit_card),
                                   ),
                                   value: _paymentMethod,
                                   items: settings.enabledPaymentMethods
-                                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                                      .map((m) => DropdownMenuItem(value: m, child: Text(settings.translate(m))))
                                       .toList(),
                                   onChanged: (val) => setState(() => _paymentMethod = val!),
                                 ),
@@ -827,7 +833,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      'Remaining Balance:',
+                                      settings.translate('Remaining Balance:'),
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
@@ -856,16 +862,16 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
                   // ─── CARD 4: APPOINTMENT STATUS ───
                   _buildCard(
-                    title: 'Appointment Status',
+                    title: settings.translate('Appointment Status'),
                     icon: Icons.fact_check_outlined,
                     child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Current Status',
-                        prefixIcon: Icon(Icons.flag_outlined),
+                      decoration: InputDecoration(
+                        labelText: settings.translate('Current Status'),
+                        prefixIcon: const Icon(Icons.flag_outlined),
                       ),
                       value: _appointmentStatus,
                       items: _statusOptions
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map((s) => DropdownMenuItem(value: s, child: Text(settings.translate(s))))
                           .toList(),
                       onChanged: (val) => setState(() => _appointmentStatus = val!),
                     ),
@@ -884,7 +890,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             side: const BorderSide(color: AppTheme.borderLight, width: 1.5),
                             foregroundColor: AppTheme.textPrimary,
                           ),
-                          child: const Text('Cancel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                          child: Text(settings.translate('Cancel'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -897,7 +903,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             elevation: 2,
                           ),
-                          child: const Text('Save Appointment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          child: Text(settings.translate('Save Appointment'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -959,7 +965,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     );
   }
 
-  Widget _buildReadOnlyTreatmentPreview(Patient patient) {
+  Widget _buildReadOnlyTreatmentPreview(Patient patient, SettingsProvider settings) {
     final provider = Provider.of<ClinicProvider>(context, listen: false);
     final history = provider.getAppointmentsForPatient(patient.id!);
     final latestAppt = history.isNotEmpty ? history.first : null;
@@ -979,12 +985,12 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                children: const [
-                  Icon(Icons.lock_outline, size: 16, color: AppTheme.primaryBlue),
-                  SizedBox(width: 6),
+                children: [
+                  const Icon(Icons.lock_outline, size: 16, color: AppTheme.primaryBlue),
+                  const SizedBox(width: 6),
                   Text(
-                    "Today's Treatment Plan (Read-Only)",
-                    style: TextStyle(
+                    settings.translate("Today's Treatment Plan (Read-Only)"),
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryBlue,
@@ -998,9 +1004,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'Doctor Mode Only',
-                  style: TextStyle(fontSize: 10, color: AppTheme.primaryBlue, fontWeight: FontWeight.bold),
+                child: Text(
+                  settings.translate('Doctor Mode Only'),
+                  style: const TextStyle(fontSize: 10, color: AppTheme.primaryBlue, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -1013,13 +1019,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Notes: ${latestAppt.notes.isNotEmpty ? latestAppt.notes : "Standard Checkup"}',
+              '${settings.translate("Notes:")} ${latestAppt.notes.isNotEmpty ? latestAppt.notes : settings.translate("Check-up")}',
               style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
             ),
           ] else ...[
-            const Text(
-              'No active clinical treatment planned by doctor for today.',
-              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+            Text(
+              settings.translate('No active clinical treatment planned by doctor for today.'),
+              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
             ),
           ],
         ],
