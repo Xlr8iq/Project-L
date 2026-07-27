@@ -111,8 +111,8 @@ class OdontogramProvider extends ChangeNotifier {
         int visits = 1;
         double fee = 50.0;
 
-        // Dynamic lookup from clinic procedures database settings
-        final procName = Tooth(number: toothNum, procedure: proc).procedureName;
+        final dummyItem = TreatmentPlanItem(patientId: 0, toothNumber: 1, procedureType: proc);
+        final procName = dummyItem.procedureName;
         final matchedSetting = clinicProvider.procedures.where((p) =>
           p.name.toLowerCase().contains(procName.toLowerCase()) ||
           procName.toLowerCase().contains(p.name.toLowerCase())
