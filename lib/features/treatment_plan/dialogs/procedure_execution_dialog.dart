@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
@@ -117,7 +116,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
               Icon(widget.item.statusIcon, color: widget.item.statusColor, size: 24),
               const SizedBox(width: 10),
               Text(
-                widget.item.procedureName,
+                settings.translate(widget.item.procedureName),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ],
@@ -250,7 +249,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
                         child: Text(
                           _nextVisitDate == null
                               ? settings.translate('Not Scheduled')
-                              : DateFormat('MMM dd, yyyy').format(_nextVisitDate!),
+                              : settings.formatDate(_nextVisitDate!),
                           style: TextStyle(
                             color: _nextVisitDate == null ? AppTheme.textSecondary : AppTheme.textPrimary,
                           ),
@@ -270,7 +269,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
                     child: TextFormField(
                       initialValue: ThousandsSeparatorInputFormatter.format(_estimatedFee),
                       decoration: InputDecoration(
-                        labelText: settings.translate('Estimated Fee'),
+                        labelText: settings.translate('Total Cost'),
                         suffixText: settings.currencySuffix,
                         prefixIcon: const Icon(Icons.attach_money),
                       ),
@@ -287,7 +286,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
                     child: TextFormField(
                       initialValue: ThousandsSeparatorInputFormatter.format(_paidAmount),
                       decoration: InputDecoration(
-                        labelText: settings.translate('Paid Amount'),
+                        labelText: settings.translate('Paid Today'),
                         suffixText: settings.currencySuffix,
                         prefixIcon: const Icon(Icons.price_check),
                       ),

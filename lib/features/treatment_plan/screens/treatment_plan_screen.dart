@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
 import '../../../core/models/treatment_plan_item.dart';
@@ -71,7 +70,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(settings.translate('Delete Procedure')),
-        content: Text('${settings.translate("Are you sure you want to remove")} ${item.procedureName} (${item.palmerCode}) ${settings.translate("from treatment plan?")}'),
+        content: Text('${settings.translate("Are you sure you want to remove")} ${settings.translate(item.procedureName)} (${item.palmerCode}) ${settings.translate("from treatment plan?")}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -163,7 +162,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${settings.translate("ID")}: #${widget.patient.id.toString().padLeft(4, '0')} • ${widget.patient.age} y/o • ${widget.patient.gender}',
+                                '${settings.translate("ID")}: #${widget.patient.id.toString().padLeft(4, '0')} • ${widget.patient.age} ${settings.translate("Age")} • ${settings.translate(widget.patient.gender)}',
                                 style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                               ),
                             ],
@@ -328,7 +327,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                         Row(
                           children: [
                             Text(
-                              item.procedureName,
+                              settings.translate(item.procedureName),
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                             ),
                             const SizedBox(width: 12),
@@ -354,7 +353,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                                   border: Border.all(color: Colors.purple.withOpacity(0.3)),
                                 ),
                                 child: Text(
-                                  'Visit ${item.currentVisit} of ${item.totalVisits}',
+                                  '${settings.translate("Visit")} ${item.currentVisit} ${settings.translate("Visits")} ${item.totalVisits}',
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purple),
                                 ),
                               ),
@@ -389,7 +388,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                                   const Icon(Icons.event, size: 16, color: AppTheme.textSecondary),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${settings.translate("Next Visit")}: ${DateFormat('MMM dd, yyyy').format(item.nextVisitDate!)}',
+                                    '${settings.translate("Next Visit")}: ${settings.formatDateShort(item.nextVisitDate!)}',
                                     style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
                                   ),
                                 ],
@@ -401,7 +400,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                         if (item.notes.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           Text(
-                            'Notes: ${item.notes}',
+                            '${settings.translate("Notes:")} ${item.notes}',
                             style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
                           ),
                         ],
@@ -418,7 +417,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                       ),
                       if (item.remainingBalance > 0)
                         Text(
-                          'Rem: ${settings.formatCurrency(item.remainingBalance)}',
+                          '${settings.translate("Remaining Balance:")} ${settings.formatCurrency(item.remainingBalance)}',
                           style: TextStyle(fontSize: 12, color: Colors.orange.shade800, fontWeight: FontWeight.w600),
                         )
                       else
@@ -437,12 +436,12 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                           ),
                           icon: Icon(isDone ? Icons.check_circle : Icons.play_arrow, size: 16),
                           label: Text(
-                            isDone ? settings.translate('View Details') : (item.totalVisits > 1 ? 'Perform Visit ${item.currentVisit}' : settings.translate('Perform Procedure')),
+                            isDone ? settings.translate('View Details') : (item.totalVisits > 1 ? '${settings.translate("Perform Visit")} ${item.currentVisit}' : settings.translate('Perform Procedure')),
                           ),
                           onPressed: () => _openProcedureChart(context, item),
                         ),
                       ],
-                    ],
+                    ),
                   ),
 
                   if (!widget.isReadOnly) ...[

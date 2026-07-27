@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/appointment.dart';
 import '../../../core/models/patient.dart';
@@ -40,11 +39,13 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
   }
 
   Future<void> _pickDate() async {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      locale: settings.isArabic ? const Locale('ar', 'SA') : const Locale('en', 'US'),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -84,7 +85,7 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
               IconButton(
                 icon: const Icon(Icons.calendar_month, color: AppTheme.primaryBlue),
                 onPressed: _pickDate,
-                tooltip: 'Select Month/Day',
+                tooltip: settings.translate('Calendar'),
               ),
             ],
           ),
@@ -105,7 +106,7 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                 onTap: () => setState(() => _selectedDate = date),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  width: 70,
+                  width: 75,
                   margin: EdgeInsets.only(left: index == 0 ? 24 : 8, right: index == days.length - 1 ? 24 : 8, top: 8, bottom: 8),
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.primaryBlue : Colors.white,
@@ -122,7 +123,7 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        DateFormat('MMM').format(date).toUpperCase(),
+                        settings.formatMonthShort(date),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -131,16 +132,16 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        DateFormat('d').format(date),
+                        '${date.day}',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: isSelected ? Colors.white : AppTheme.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        DateFormat('E').format(date),
+                        settings.formatWeekdayShort(date),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -166,7 +167,7 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
               if (dailyAppointments.isEmpty) {
                 return Center(
                   child: Text(
-                    settings.translate('No appointments for this date.'),
+                    settings.translate('No appointments scheduled for today.'),
                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
                   ),
                 );
@@ -195,17 +196,9 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                                 color: AppTheme.primaryBlue.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    DateFormat('hh:mm').format(appointment.dateTime),
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
-                                  ),
-                                  Text(
-                                    DateFormat('a').format(appointment.dateTime),
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
-                                  ),
-                                ],
+                              child: Text(
+                                settings.formatTime(appointment.dateTime),
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                               ),
                             ),
                             const SizedBox(width: 20),
@@ -219,8 +212,13 @@ class _AppointmentsCalendarViewState extends State<AppointmentsCalendarView> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    appointment.notes.isNotEmpty ? appointment.notes : settings.translate('General Checkup'),
+                                    '${settings.translate("Type:")} ${settings.translate(appointment.notes.isNotEmpty ? appointment.notes : "Checkup / Consultation")}',
                                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${settings.translate("Doctor:")} ${appointment.doctorName}',
+                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                                   ),
                                 ],
                               ),
@@ -299,6 +297,7 @@ class _AppointmentDetailModalState extends State<_AppointmentDetailModal> {
   }
 
   void _save(BuildContext context) async {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     final updated = widget.appointment.copyWith(
       notes: _notesController.text,
       workPerformed: _workPerformedController.text,
@@ -313,7 +312,7 @@ class _AppointmentDetailModalState extends State<_AppointmentDetailModal> {
     if (!mounted) return;
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Appointment updated successfully!'), backgroundColor: Colors.green),
+      SnackBar(content: Text(settings.translate('Appointment scheduled successfully for')), backgroundColor: Colors.green),
     );
   }
 
@@ -348,7 +347,7 @@ class _AppointmentDetailModalState extends State<_AppointmentDetailModal> {
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22, color: AppTheme.textPrimary),
                     ),
                     Text(
-                      settings.translate('Appointment Details'),
+                      settings.translate('Appointment Status'),
                       style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                     ),
                   ],
@@ -397,13 +396,13 @@ class _AppointmentDetailModalState extends State<_AppointmentDetailModal> {
 
             TextField(
               controller: _notesController,
-              decoration: InputDecoration(labelText: settings.translate('Reason for Visit / Notes')),
+              decoration: InputDecoration(labelText: settings.translate('Administrative Notes (Optional)')),
               maxLines: 2,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _workPerformedController,
-              decoration: InputDecoration(labelText: settings.translate('Work Performed (Procedures, Treatments)')),
+              decoration: InputDecoration(labelText: settings.translate('Work Performed')),
               maxLines: 3,
             ),
             const SizedBox(height: 16),
@@ -431,7 +430,7 @@ class _AppointmentDetailModalState extends State<_AppointmentDetailModal> {
                 textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               onPressed: () => _save(context),
-              child: Text(settings.translate('Save Details')),
+              child: Text(settings.translate('Save')),
             ),
           ],
         ),

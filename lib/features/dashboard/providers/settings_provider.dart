@@ -83,6 +83,37 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
+  String formatMonthShort(DateTime date) {
+    if (isArabic) {
+      final monthsAr = [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      ];
+      return monthsAr[date.month - 1];
+    } else {
+      return DateFormat('MMM').format(date).toUpperCase();
+    }
+  }
+
+  String formatWeekdayShort(DateTime date) {
+    if (isArabic) {
+      final daysAr = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+      return daysAr[date.weekday - 1];
+    } else {
+      return DateFormat('E').format(date);
+    }
+  }
+
+  String formatTime(DateTime date) {
+    if (isArabic) {
+      final hour = DateFormat('hh:mm').format(date);
+      final period = date.hour >= 12 ? 'م' : 'ص';
+      return '$hour $period';
+    } else {
+      return DateFormat('hh:mm a').format(date);
+    }
+  }
+
   String translate(String key) {
     if (!isArabic) return key;
     return Translations.ar[key] ?? key;
@@ -158,21 +189,5 @@ class SettingsProvider extends ChangeNotifier {
 
     await _service.saveSettings(data);
     notifyListeners();
-  }
-
-  Future<void> saveSettings({
-    required String name,
-    required String address,
-    required String license,
-    required String logo,
-    bool? arabic,
-  }) async {
-    await updateSettings({
-      'clinic_name': name,
-      'clinic_address': address,
-      'clinic_license': license,
-      'logo_path': logo,
-      if (arabic != null) 'is_arabic': arabic,
-    });
   }
 }
