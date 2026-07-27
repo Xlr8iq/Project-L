@@ -52,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     value,
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
                     ),
@@ -122,7 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Expanded(
                     child: _buildStatCard(
                       settings.translate('Outstanding Est. Bal'),
-                      '\$${provider.totalOutstandingBalance.toStringAsFixed(0)}',
+                      settings.formatCurrency(provider.totalOutstandingBalance),
                       Icons.account_balance_wallet_outlined,
                       Colors.green.shade700,
                     ),
@@ -240,7 +240,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          settings.translate('Lumina'),
+          settings.translate(settings.clinicName.isNotEmpty ? settings.clinicName : 'Lumina'),
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, letterSpacing: 0.5),
         ),
         actions: [

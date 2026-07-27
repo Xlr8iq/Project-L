@@ -7,6 +7,8 @@ import '../models/appointment.dart';
 import '../models/tooth.dart';
 import '../models/treatment_plan_item.dart';
 import '../models/doctor.dart';
+import '../models/procedure_setting.dart';
+import '../models/secretary.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -24,7 +26,7 @@ class DatabaseHelper {
     if (kIsWeb) {
       var factory = databaseFactoryFfiWeb;
       return await factory.openDatabase(filePath, options: OpenDatabaseOptions(
-        version: 5,
+        version: 6,
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       ));
@@ -33,7 +35,7 @@ class DatabaseHelper {
       final path = join(dbPath, filePath);
       return await openDatabase(
         path, 
-        version: 5, 
+        version: 6, 
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       );
@@ -99,6 +101,35 @@ CREATE TABLE IF NOT EXISTS doctors (
           await _seedDefaultDoctors(db);
         } catch (e) {
           debugPrint("Database Upgrade V5 Warning: $e");
+        }
+      }
+      if (oldVersion < 6) {
+        try {
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS procedure_settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  default_fee REAL NOT NULL,
+  currency TEXT NOT NULL,
+  default_visits INTEGER DEFAULT 1,
+  is_active INTEGER DEFAULT 1
+)
+''');
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS secretaries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  phone TEXT,
+  username TEXT NOT NULL,
+  password TEXT NOT NULL,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT NOT NULL
+)
+''');
+          await _seedDefaultProcedures(db);
+          await _seedDefaultSecretaries(db);
+        } catch (e) {
+          debugPrint("Database Upgrade V6 Warning: $e");
         }
       }
     }
@@ -181,7 +212,32 @@ CREATE TABLE doctors (
 )
 ''');
 
+    await db.execute('''
+CREATE TABLE procedure_settings (
+  id $idType,
+  name $textType,
+  default_fee REAL NOT NULL,
+  currency $textType,
+  default_visits INTEGER DEFAULT 1,
+  is_active INTEGER DEFAULT 1
+)
+''');
+
+    await db.execute('''
+CREATE TABLE secretaries (
+  id $idType,
+  name $textType,
+  phone TEXT,
+  username $textType,
+  password $textType,
+  is_active INTEGER DEFAULT 1,
+  created_at $textType
+)
+''');
+
     await _seedDefaultDoctors(db);
+    await _seedDefaultProcedures(db);
+    await _seedDefaultSecretaries(db);
   }
 
   Future<void> _seedDefaultDoctors(Database db) async {
@@ -198,6 +254,41 @@ CREATE TABLE doctors (
       for (var d in defaultDoctors) {
         await db.insert('doctors', d);
       }
+    }
+  }
+
+  Future<void> _seedDefaultProcedures(Database db) async {
+    final countResult = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM procedure_settings'));
+    if (countResult == 0) {
+      final defaultProcedures = [
+        {'name': 'Composite Restoration', 'default_fee': 50.0, 'currency': 'USD', 'default_visits': 1, 'is_active': 1},
+        {'name': 'Root Canal (RCT)', 'default_fee': 180.0, 'currency': 'USD', 'default_visits': 3, 'is_active': 1},
+        {'name': 'Extraction', 'default_fee': 70.0, 'currency': 'USD', 'default_visits': 1, 'is_active': 1},
+        {'name': 'Crown', 'default_fee': 250.0, 'currency': 'USD', 'default_visits': 2, 'is_active': 1},
+        {'name': 'Bridge', 'default_fee': 350.0, 'currency': 'USD', 'default_visits': 2, 'is_active': 1},
+        {'name': 'Scaling & Polishing', 'default_fee': 40.0, 'currency': 'USD', 'default_visits': 1, 'is_active': 1},
+        {'name': 'Implant', 'default_fee': 400.0, 'currency': 'USD', 'default_visits': 3, 'is_active': 1},
+        {'name': 'Veneer', 'default_fee': 200.0, 'currency': 'USD', 'default_visits': 2, 'is_active': 1},
+      ];
+
+      for (var p in defaultProcedures) {
+        await db.insert('procedure_settings', p);
+      }
+    }
+  }
+
+  Future<void> _seedDefaultSecretaries(Database db) async {
+    final countResult = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM secretaries'));
+    if (countResult == 0) {
+      final now = DateTime.now().toIso8601String();
+      await db.insert('secretaries', {
+        'name': 'Hadeel Kareem',
+        'phone': '+1 (555) 987-6543',
+        'username': 'secretary1',
+        'password': '123',
+        'is_active': 1,
+        'created_at': now,
+      });
     }
   }
 
@@ -228,6 +319,64 @@ CREATE TABLE doctors (
   Future<int> deleteDoctor(int id) async {
     final db = await instance.database;
     return db.delete('doctors', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // --- Procedure Settings ---
+  Future<ProcedureSetting> createProcedureSetting(ProcedureSetting proc) async {
+    final db = await instance.database;
+    final id = await db.insert('procedure_settings', proc.toMap());
+    return proc.copyWith(id: id);
+  }
+
+  Future<List<ProcedureSetting>> readAllProcedureSettings() async {
+    final db = await instance.database;
+    const orderBy = 'name ASC';
+    final result = await db.query('procedure_settings', orderBy: orderBy);
+    return result.map((json) => ProcedureSetting.fromMap(json)).toList();
+  }
+
+  Future<int> updateProcedureSetting(ProcedureSetting proc) async {
+    final db = await instance.database;
+    return db.update(
+      'procedure_settings',
+      proc.toMap(),
+      where: 'id = ?',
+      whereArgs: [proc.id],
+    );
+  }
+
+  Future<int> deleteProcedureSetting(int id) async {
+    final db = await instance.database;
+    return db.delete('procedure_settings', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // --- Secretaries ---
+  Future<Secretary> createSecretary(Secretary sec) async {
+    final db = await instance.database;
+    final id = await db.insert('secretaries', sec.toMap());
+    return sec.copyWith(id: id);
+  }
+
+  Future<List<Secretary>> readAllSecretaries() async {
+    final db = await instance.database;
+    const orderBy = 'name ASC';
+    final result = await db.query('secretaries', orderBy: orderBy);
+    return result.map((json) => Secretary.fromMap(json)).toList();
+  }
+
+  Future<int> updateSecretary(Secretary sec) async {
+    final db = await instance.database;
+    return db.update(
+      'secretaries',
+      sec.toMap(),
+      where: 'id = ?',
+      whereArgs: [sec.id],
+    );
+  }
+
+  Future<int> deleteSecretary(int id) async {
+    final db = await instance.database;
+    return db.delete('secretaries', where: 'id = ?', whereArgs: [id]);
   }
 
   // --- Patients ---

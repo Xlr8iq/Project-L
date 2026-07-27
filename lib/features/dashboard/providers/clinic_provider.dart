@@ -4,11 +4,16 @@ import '../../../core/models/patient.dart';
 import '../../../core/models/appointment.dart';
 import '../../../core/models/treatment_plan_item.dart';
 import '../../../core/models/doctor.dart';
+import '../../../core/models/procedure_setting.dart';
+import '../../../core/models/secretary.dart';
 
 class ClinicProvider extends ChangeNotifier {
   List<Patient> patients = [];
   List<Appointment> appointments = [];
   List<Doctor> doctors = [];
+  List<ProcedureSetting> procedures = [];
+  List<Secretary> secretaries = [];
+
   Map<int, List<TreatmentPlanItem>> _treatmentPlans = {};
   bool isLoading = false;
   int _webIdCounter = 1;
@@ -20,6 +25,8 @@ class ClinicProvider extends ChangeNotifier {
     if (!kIsWeb) {
       try {
         doctors = await DatabaseHelper.instance.readAllDoctors();
+        procedures = await DatabaseHelper.instance.readAllProcedureSettings();
+        secretaries = await DatabaseHelper.instance.readAllSecretaries();
         patients = await DatabaseHelper.instance.readAllPatients();
         appointments = await DatabaseHelper.instance.readAllAppointments();
       } catch (e) {
@@ -32,6 +39,19 @@ class ClinicProvider extends ChangeNotifier {
           Doctor(id: 2, name: 'Dr. Michael Chen', specialty: 'Orthodontics & General'),
           Doctor(id: 3, name: 'Dr. Emily Taylor', specialty: 'Prosthodontics & Cosmetic'),
           Doctor(id: 4, name: 'Dr. Alex Smith', specialty: 'Oral Surgery & Implants'),
+        ];
+      }
+      if (procedures.isEmpty) {
+        procedures = [
+          ProcedureSetting(id: 1, name: 'Composite Restoration', defaultFee: 50.0, defaultVisits: 1),
+          ProcedureSetting(id: 2, name: 'Root Canal (RCT)', defaultFee: 180.0, defaultVisits: 3),
+          ProcedureSetting(id: 3, name: 'Extraction', defaultFee: 70.0, defaultVisits: 1),
+          ProcedureSetting(id: 4, name: 'Crown', defaultFee: 250.0, defaultVisits: 2),
+        ];
+      }
+      if (secretaries.isEmpty) {
+        secretaries = [
+          Secretary(id: 1, name: 'Hadeel Kareem', phone: '+1 (555) 987-6543', username: 'secretary1', password: '123'),
         ];
       }
     }
@@ -73,6 +93,72 @@ class ClinicProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Secretary Management ───
+
+  Future<Secretary> addSecretary(Secretary secretary) async {
+    Secretary newSec;
+    if (kIsWeb) {
+      newSec = secretary.copyWith(id: _webIdCounter++);
+    } else {
+      newSec = await DatabaseHelper.instance.createSecretary(secretary);
+    }
+    secretaries.add(newSec);
+    notifyListeners();
+    return newSec;
+  }
+
+  Future<void> updateSecretary(Secretary secretary) async {
+    final index = secretaries.indexWhere((s) => s.id == secretary.id);
+    if (index != -1) {
+      secretaries[index] = secretary;
+      if (!kIsWeb) {
+        await DatabaseHelper.instance.updateSecretary(secretary);
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteSecretary(int secretaryId) async {
+    secretaries.removeWhere((s) => s.id == secretaryId);
+    if (!kIsWeb) {
+      await DatabaseHelper.instance.deleteSecretary(secretaryId);
+    }
+    notifyListeners();
+  }
+
+  // ─── Procedure Settings Management ───
+
+  Future<ProcedureSetting> addProcedureSetting(ProcedureSetting proc) async {
+    ProcedureSetting newProc;
+    if (kIsWeb) {
+      newProc = proc.copyWith(id: _webIdCounter++);
+    } else {
+      newProc = await DatabaseHelper.instance.createProcedureSetting(proc);
+    }
+    procedures.add(newProc);
+    notifyListeners();
+    return newProc;
+  }
+
+  Future<void> updateProcedureSetting(ProcedureSetting proc) async {
+    final index = procedures.indexWhere((p) => p.id == proc.id);
+    if (index != -1) {
+      procedures[index] = proc;
+      if (!kIsWeb) {
+        await DatabaseHelper.instance.updateProcedureSetting(proc);
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteProcedureSetting(int procId) async {
+    procedures.removeWhere((p) => p.id == procId);
+    if (!kIsWeb) {
+      await DatabaseHelper.instance.deleteProcedureSetting(procId);
+    }
+    notifyListeners();
+  }
+
   // ─── Treatment Plan Management ───
 
   List<TreatmentPlanItem> getTreatmentPlan(int patientId) {
@@ -103,7 +189,6 @@ class ClinicProvider extends ChangeNotifier {
     list.add(newItem);
     _treatmentPlans[item.patientId] = list;
 
-    // Auto-sync appointment if a next visit date is set
     if (newItem.nextVisitDate != null) {
       await syncNextVisitAppointment(
         patientId: newItem.patientId,
@@ -130,7 +215,6 @@ class ClinicProvider extends ChangeNotifier {
           await DatabaseHelper.instance.updateTreatmentPlanItem(item);
         }
 
-        // Auto-sync appointment whenever next visit date is updated or scheduled
         if (item.nextVisitDate != null && item.status != TreatmentPlanStatus.completed) {
           await syncNextVisitAppointment(
             patientId: item.patientId,

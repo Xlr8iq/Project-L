@@ -1,58 +1,90 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../core/theme.dart';
 import '../../dashboard/providers/settings_provider.dart';
+import 'sub_screens/clinic_settings_screen.dart';
+import 'sub_screens/prescription_settings_screen.dart';
+import 'sub_screens/staff_settings_screen.dart';
+import 'sub_screens/procedures_settings_screen.dart';
+import 'sub_screens/financial_settings_screen.dart';
+import 'sub_screens/whatsapp_settings_screen.dart';
+import 'sub_screens/backup_settings_screen.dart';
+import 'sub_screens/support_settings_screen.dart';
+import 'sub_screens/about_settings_screen.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  late TextEditingController _nameController;
-  late TextEditingController _addressController;
-  late TextEditingController _licenseController;
-  String _logoPath = '';
-
-  @override
-  void initState() {
-    super.initState();
-    final provider = Provider.of<SettingsProvider>(context, listen: false);
-    _nameController = TextEditingController(text: provider.clinicName);
-    _addressController = TextEditingController(text: provider.clinicAddress);
-    _licenseController = TextEditingController(text: provider.clinicLicense);
-    _logoPath = provider.logoPath;
-  }
-
-  Future<void> _pickLogo() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _logoPath = pickedFile.path;
-      });
-    }
-  }
-
-  void _saveSettings() {
-    Provider.of<SettingsProvider>(context, listen: false).saveSettings(
-      name: _nameController.text,
-      address: _addressController.text,
-      license: _licenseController.text,
-      logo: _logoPath,
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Prescription template saved!'), backgroundColor: Colors.green),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final provider = context.watch<SettingsProvider>();
+    final settings = context.watch<SettingsProvider>();
+
+    final List<Map<String, dynamic>> sections = [
+      {
+        'title': settings.translate('Clinic Information'),
+        'subtitle': settings.translate('Clinic name, logo, contact, language & currency'),
+        'icon': Icons.local_hospital,
+        'color': AppTheme.primaryBlue,
+        'screen': const ClinicSettingsScreen(),
+      },
+      {
+        'title': settings.translate('Prescription Settings'),
+        'subtitle': settings.translate('Header branding, footers, signature & notes'),
+        'icon': Icons.description_outlined,
+        'color': Colors.indigo,
+        'screen': const PrescriptionSettingsScreen(),
+      },
+      {
+        'title': settings.translate('Staff Management'),
+        'subtitle': settings.translate('Doctors & Secretaries credentials & active roles'),
+        'icon': Icons.people_outline,
+        'color': Colors.teal,
+        'screen': const StaffSettingsScreen(),
+      },
+      {
+        'title': settings.translate('Procedures & Fees'),
+        'subtitle': settings.translate('Default fees, currency & planned visits counter'),
+        'icon': Icons.medical_services_outlined,
+        'color': Colors.deepOrange,
+        'screen': const ProceduresSettingsScreen(),
+      },
+      {
+        'title': settings.translate('Financial & Billing'),
+        'subtitle': settings.translate('Default consultation fee & active payment methods'),
+        'icon': Icons.account_balance_wallet_outlined,
+        'color': Colors.green.shade700,
+        'screen': const FinancialSettingsScreen(),
+      },
+      {
+        'title': settings.translate('WhatsApp & Reminders'),
+        'subtitle': settings.translate('Automated reminder templates & WhatsApp number'),
+        'icon': Icons.chat_bubble_outline,
+        'color': Colors.lightGreen.shade700,
+        'screen': const WhatsappSettingsScreen(),
+      },
+      {
+        'title': settings.translate('Backup & Restore'),
+        'subtitle': settings.translate('Database export, automatic backups & restore points'),
+        'icon': Icons.backup_outlined,
+        'color': Colors.blueGrey,
+        'screen': const BackupSettingsScreen(),
+      },
+      {
+        'title': settings.translate('Support & Developer'),
+        'subtitle': settings.translate('Contact support, report bugs & request features'),
+        'icon': Icons.help_outline,
+        'color': Colors.purple,
+        'screen': const SupportSettingsScreen(),
+      },
+      {
+        'title': settings.translate('About System'),
+        'subtitle': settings.translate('App version, database schema v6 & licenses'),
+        'icon': Icons.info_outline,
+        'color': Colors.amber.shade800,
+        'screen': const AboutSettingsScreen(),
+      },
+    ];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32.0),
       child: Column(
@@ -61,109 +93,119 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                provider.translate('Edit Prescription Template'),
-                style: Theme.of(context).textTheme.headlineMedium,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    settings.translate('Settings'),
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    settings.translate('Central application configuration & single source of truth'),
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                  ),
+                ],
               ),
               Row(
                 children: [
-                  const Text('English', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
-                  const SizedBox(width: 8),
-                  Switch(
-                    value: provider.isArabic,
-                    onChanged: (val) {
-                      provider.toggleLanguage();
+                  ChoiceChip(
+                    label: const Text('English'),
+                    selected: !settings.isArabic,
+                    onSelected: (val) {
+                      if (val) settings.updateSettings({'is_arabic': false});
                     },
-                    activeThumbColor: AppTheme.primaryBlue,
                   ),
                   const SizedBox(width: 8),
-                  const Text('العربية', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+                  ChoiceChip(
+                    label: const Text('العربية'),
+                    selected: settings.isArabic,
+                    onSelected: (val) {
+                      if (val) settings.updateSettings({'is_arabic': true});
+                    },
+                  ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            provider.translate('Configure the branding that will appear at the top of printed prescriptions.'),
-            style: const TextStyle(color: AppTheme.textSecondary),
-          ),
           const SizedBox(height: 32),
 
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(28.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    provider.translate('Clinic Logo'),
-                    style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: AppTheme.backgroundLight,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.borderLight),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: 2.2 / 1,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: sections.length,
+                itemBuilder: (context, index) {
+                  final section = sections[index];
+                  final IconData icon = section['icon'];
+                  final Color color = section['color'];
+
+                  return Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => section['screen']),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 26,
+                              backgroundColor: color.withOpacity(0.12),
+                              child: Icon(icon, color: color, size: 28),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    section['title'],
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    section['subtitle'],
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, size: 16, color: AppTheme.textSecondary),
+                          ],
                         ),
-                        child: _logoPath.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.file(File(_logoPath), fit: BoxFit.cover),
-                              )
-                            : const Icon(Icons.business, size: 48, color: AppTheme.textSecondary),
                       ),
-                      const SizedBox(width: 24),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.upload),
-                        label: Text(provider.translate('Upload Logo')),
-                        onPressed: _pickLogo,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-                  Text(
-                    provider.translate('Clinic Information'),
-                    style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(labelText: provider.translate('Clinic Name')),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _addressController,
-                    decoration: InputDecoration(labelText: provider.translate('Address & Contact')),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _licenseController,
-                    decoration: InputDecoration(labelText: provider.translate('Doctor / License Information')),
-                  ),
-
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: _saveSettings,
-                      child: Text(provider.translate('Save Template')),
                     ),
-                  )
-                ],
-              ),
-            ),
+                  );
+                },
+              );
+            },
           ),
         ],
       ),

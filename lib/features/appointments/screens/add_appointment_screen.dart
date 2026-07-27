@@ -55,12 +55,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     'Consultation',
   ];
 
-  final List<String> _paymentMethods = [
-    'Cash',
-    'Card',
-    'Bank Transfer',
-  ];
-
   final List<String> _statusOptions = [
     'Scheduled',
     'Arrived',
@@ -74,6 +68,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   void initState() {
     super.initState();
     final provider = Provider.of<ClinicProvider>(context, listen: false);
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+
+    _consultationFee = settings.defaultConsultationFee;
+
     if (provider.doctors.isNotEmpty) {
       _selectedDoctor = provider.doctors.first.name;
     }
@@ -210,6 +208,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       );
 
       final provider = Provider.of<ClinicProvider>(context, listen: false);
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
 
       try {
         Patient patient;
@@ -268,7 +267,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         }
 
         final paymentSummary = _chargeConsultationFee
-            ? 'Fee: \$${_consultationFee.toStringAsFixed(2)} | Paid: \$${_paidToday.toStringAsFixed(2)} | Bal: \$${_remainingBalance.toStringAsFixed(2)} ($_paymentMethod)'
+            ? 'Fee: ${settings.formatCurrency(_consultationFee)} | Paid: ${settings.formatCurrency(_paidToday)} | Bal: ${settings.formatCurrency(_remainingBalance)} ($_paymentMethod)'
             : 'No Consultation Fee';
 
         final combinedNotes = [
@@ -737,9 +736,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               Expanded(
                                 child: TextFormField(
                                   initialValue: _consultationFee.toStringAsFixed(0),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Consultation Fee (\$) *',
-                                    prefixIcon: Icon(Icons.attach_money),
+                                  decoration: InputDecoration(
+                                    labelText: 'Consultation Fee (${settings.currencySymbol}) *',
+                                    prefixIcon: const Icon(Icons.attach_money),
                                   ),
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   validator: (val) {
@@ -758,9 +757,9 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               Expanded(
                                 child: TextFormField(
                                   initialValue: _paidToday.toStringAsFixed(0),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Paid Today (\$) *',
-                                    prefixIcon: Icon(Icons.price_check),
+                                  decoration: InputDecoration(
+                                    labelText: 'Paid Today (${settings.currencySymbol}) *',
+                                    prefixIcon: const Icon(Icons.price_check),
                                   ),
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   validator: (val) {
@@ -785,7 +784,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                     prefixIcon: Icon(Icons.credit_card),
                                   ),
                                   value: _paymentMethod,
-                                  items: _paymentMethods
+                                  items: settings.enabledPaymentMethods
                                       .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                                       .toList(),
                                   onChanged: (val) => setState(() => _paymentMethod = val!),
@@ -826,7 +825,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   ],
                                 ),
                                 Text(
-                                  '\$${_remainingBalance.toStringAsFixed(2)}',
+                                  settings.formatCurrency(_remainingBalance),
                                   style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,

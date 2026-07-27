@@ -268,7 +268,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
                     child: TextFormField(
                       initialValue: _estimatedFee.toStringAsFixed(0),
                       decoration: InputDecoration(
-                        labelText: settings.translate('Estimated Fee (\$)'),
+                        labelText: '${settings.translate("Estimated Fee")} (${settings.currencySymbol})',
                         prefixIcon: const Icon(Icons.attach_money),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -280,7 +280,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
                     child: TextFormField(
                       initialValue: _paidAmount.toStringAsFixed(0),
                       decoration: InputDecoration(
-                        labelText: settings.translate('Paid Amount (\$)'),
+                        labelText: '${settings.translate("Paid Amount")} (${settings.currencySymbol})',
                         prefixIcon: const Icon(Icons.price_check),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),

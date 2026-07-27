@@ -182,7 +182,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                                 style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
                               ),
                               Text(
-                                '\$${totalRem.toStringAsFixed(2)}',
+                                settings.formatCurrency(totalRem),
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -298,7 +298,6 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Visual Status Icon
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -309,7 +308,6 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                 ),
                 const SizedBox(width: 16),
 
-                // Main Info Column
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +335,6 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Status Badge & Next Visit
                       Row(
                         children: [
                           Container(
@@ -384,17 +381,16 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                   ),
                 ),
 
-                // Financial & Action Column
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '\$${item.estimatedFee.toStringAsFixed(2)}',
+                      settings.formatCurrency(item.estimatedFee),
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                     ),
                     if (item.remainingBalance > 0)
                       Text(
-                        'Rem: \$${item.remainingBalance.toStringAsFixed(2)}',
+                        'Rem: ${settings.formatCurrency(item.remainingBalance)}',
                         style: TextStyle(fontSize: 12, color: Colors.orange.shade800, fontWeight: FontWeight.w600),
                       )
                     else
@@ -404,7 +400,6 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                       ),
                     const SizedBox(height: 12),
 
-                    // Primary Action Button
                     if (!widget.isReadOnly) ...[
                       if (item.status == TreatmentPlanStatus.planned)
                         ElevatedButton.icon(
@@ -420,7 +415,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
                       else if (item.status == TreatmentPlanStatus.inProgress || item.status == TreatmentPlanStatus.scheduled)
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFF57C00), // Amber
+                            backgroundColor: const Color(0xFFF57C00),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           ),
