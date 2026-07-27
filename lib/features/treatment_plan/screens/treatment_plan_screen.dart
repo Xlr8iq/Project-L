@@ -305,167 +305,163 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
         onTap: () => _openProcedureChart(context, item),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Column(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: item.statusColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(item.statusIcon, color: item.statusColor, size: 28),
-                  ),
-                  const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: item.statusColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(item.statusIcon, color: item.statusColor, size: 28),
+              ),
+              const SizedBox(width: 16),
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              settings.translate(item.procedureName),
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryBlue.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
-                              ),
-                              child: Text(
-                                '${settings.translate("Tooth")}: ${item.palmerDisplay}',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
-                              ),
-                            ),
-                            if (item.totalVisits > 1) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.purple.withOpacity(0.08),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.purple.withOpacity(0.3)),
-                                ),
-                                child: Text(
-                                  '${settings.translate("Visit")} ${item.currentVisit} ${settings.translate("Visits")} ${item.totalVisits}',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purple),
-                                ),
-                              ),
-                            ],
-                          ],
+                        Text(
+                          settings.translate(item.procedureName),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
-                        const SizedBox(height: 8),
-
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: item.statusColor.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(item.statusIcon, size: 14, color: item.statusColor),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    settings.translate(item.statusDisplay),
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.statusColor),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (item.nextVisitDate != null && !isDone) ...[
-                              const SizedBox(width: 16),
-                              Row(
-                                children: [
-                                  const Icon(Icons.event, size: 16, color: AppTheme.textSecondary),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${settings.translate("Next Visit")}: ${settings.formatDateShort(item.nextVisitDate!)}',
-                                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBlue.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            '${settings.translate("Tooth")}: ${item.palmerDisplay}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                          ),
                         ),
-
-                        if (item.notes.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            '${settings.translate("Notes:")} ${item.notes}',
-                            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                        if (item.totalVisits > 1) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              '${settings.translate("Visit")} ${item.currentVisit} ${settings.translate("Visits")} ${item.totalVisits}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purple),
+                            ),
                           ),
                         ],
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
 
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        settings.formatCurrency(item.estimatedFee),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                      ),
-                      if (item.remainingBalance > 0)
-                        Text(
-                          '${settings.translate("Remaining Balance:")} ${settings.formatCurrency(item.remainingBalance)}',
-                          style: TextStyle(fontSize: 12, color: Colors.orange.shade800, fontWeight: FontWeight.w600),
-                        )
-                      else
-                        Text(
-                          settings.translate('Paid in Full'),
-                          style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.w600),
-                        ),
-                      const SizedBox(height: 12),
-
-                      if (!widget.isReadOnly) ...[
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isDone ? Colors.green.shade700 : AppTheme.primaryBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: item.statusColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          icon: Icon(isDone ? Icons.check_circle : Icons.play_arrow, size: 16),
-                          label: Text(
-                            isDone ? settings.translate('View Details') : (item.totalVisits > 1 ? '${settings.translate("Perform Visit")} ${item.currentVisit}' : settings.translate('Perform Procedure')),
-                          ),
-                          onPressed: () => _openProcedureChart(context, item),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  if (!widget.isReadOnly) ...[
-                    const SizedBox(width: 8),
-                    PopupMenuButton<String>(
-                      onSelected: (val) {
-                        if (val == 'delete') _confirmDeleteItem(context, item);
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'delete',
                           child: Row(
                             children: [
-                              const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                              const SizedBox(width: 8),
-                              Text(settings.translate('Delete Procedure')),
+                              Icon(item.statusIcon, size: 14, color: item.statusColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                settings.translate(item.statusDisplay),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.statusColor),
+                              ),
                             ],
                           ),
                         ),
+                        if (item.nextVisitDate != null && !isDone) ...[
+                          const SizedBox(width: 16),
+                          Row(
+                            children: [
+                              const Icon(Icons.event, size: 16, color: AppTheme.textSecondary),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${settings.translate("Next Visit")}: ${settings.formatDateShort(item.nextVisitDate!)}',
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
+                    ),
+
+                    if (item.notes.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${settings.translate("Notes:")} ${item.notes}',
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    settings.formatCurrency(item.estimatedFee),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                  ),
+                  if (item.remainingBalance > 0)
+                    Text(
+                      '${settings.translate("Remaining Balance:")} ${settings.formatCurrency(item.remainingBalance)}',
+                      style: TextStyle(fontSize: 12, color: Colors.orange.shade800, fontWeight: FontWeight.w600),
+                    )
+                  else
+                    Text(
+                      settings.translate('Paid in Full'),
+                      style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.w600),
+                    ),
+                  const SizedBox(height: 12),
+
+                  if (!widget.isReadOnly) ...[
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDone ? Colors.green.shade700 : AppTheme.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                      icon: Icon(isDone ? Icons.check_circle : Icons.play_arrow, size: 16),
+                      label: Text(
+                        isDone ? settings.translate('View Details') : (item.totalVisits > 1 ? '${settings.translate("Perform Visit")} ${item.currentVisit}' : settings.translate('Perform Procedure')),
+                      ),
+                      onPressed: () => _openProcedureChart(context, item),
                     ),
                   ],
                 ],
               ),
+
+              if (!widget.isReadOnly) ...[
+                const SizedBox(width: 8),
+                PopupMenuButton<String>(
+                  onSelected: (val) {
+                    if (val == 'delete') _confirmDeleteItem(context, item);
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                          const SizedBox(width: 8),
+                          Text(settings.translate('Delete Procedure')),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
