@@ -219,9 +219,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ],
-          );
-        },
-      );
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildAppointments() {
