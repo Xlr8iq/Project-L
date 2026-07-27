@@ -40,6 +40,8 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
 
   void _showPastAppointmentDetails(BuildContext context, Appointment appointment) {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final provider = Provider.of<ClinicProvider>(context, listen: false);
+    final activeDoctor = provider.doctors.isNotEmpty ? provider.doctors.first.name : '';
 
     showDialog(
       context: context,
@@ -61,10 +63,18 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
                 settings.translate(appointment.status),
                 appointment.status == 'Completed' ? Colors.green.shade700 : Colors.orange.shade800,
               ),
+              if (activeDoctor.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildDetailSection(
+                  settings.translate('Doctor:'),
+                  activeDoctor,
+                  AppTheme.textPrimary,
+                ),
+              ],
               const SizedBox(height: 16),
               _buildDetailSection(
                 settings.translate('Reason / Notes'),
-                appointment.notes.isEmpty ? settings.translate('N/A') : appointment.notes,
+                appointment.notes.isEmpty ? settings.translate('No Consultation Fee') : settings.translate(appointment.notes),
                 AppTheme.textPrimary,
               ),
               const SizedBox(height: 16),
@@ -81,7 +91,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
               ),
               const SizedBox(height: 16),
               _buildDetailSection(
-                settings.translate('Medications'),
+                settings.translate('Medications Prescribed'),
                 appointment.medications.isEmpty ? settings.translate('None prescribed') : appointment.medications,
                 AppTheme.textPrimary,
               ),

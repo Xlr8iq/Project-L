@@ -35,7 +35,7 @@ class ClinicProvider extends ChangeNotifier {
     } else {
       if (doctors.isEmpty) {
         doctors = [
-          Doctor(id: 1, name: 'Dr. Sarah Johnson', specialty: 'Endodontics & Restorative'),
+          Doctor(id: 1, name: 'Dr. Ahmed Al-Mousawi', specialty: 'Endodontics & Restorative'),
           Doctor(id: 2, name: 'Dr. Michael Chen', specialty: 'Orthodontics & General'),
           Doctor(id: 3, name: 'Dr. Emily Taylor', specialty: 'Prosthodontics & Cosmetic'),
           Doctor(id: 4, name: 'Dr. Alex Smith', specialty: 'Oral Surgery & Implants'),

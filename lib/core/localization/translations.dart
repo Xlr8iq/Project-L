@@ -53,11 +53,20 @@ class Translations {
     "Sat": "السبت",
     "Sun": "الأحد",
 
-    // ─── APPOINTMENT CARDS ───
+    // ─── APPOINTMENT CARDS & DIALOGS ───
     "Type:": "النوع:",
     "Doctor:": "الطبيب:",
     "No Consultation Fee": "بدون أجور استشارة",
     "Print Rx": "طباعة الوصفة",
+    "Appointment Details": "تفاصيل الموعد",
+    "Reason / Notes": "السبب / الملاحظات",
+    "Reason for Visit / Notes": "السبب / الملاحظات",
+    "Work Performed": "الإجراء المنجز",
+    "Work Performed (Procedures, Treatments)": "الإجراء المنجز",
+    "Outcomes & Doctor Notes": "النتائج وملاحظات الطبيب",
+    "Medications Prescribed": "الأدوية الموصوفة",
+    "Medications": "الأدوية الموصوفة",
+    "Save Details": "حفظ التفاصيل",
 
     // ─── TREATMENT STATUS ───
     "Completed": "مكتمل",

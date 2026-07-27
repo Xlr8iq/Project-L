@@ -245,7 +245,7 @@ CREATE TABLE secretaries (
     if (countResult == 0) {
       final now = DateTime.now().toIso8601String();
       final defaultDoctors = [
-        {'name': 'Dr. Sarah Johnson', 'specialty': 'Endodontics & Restorative', 'phone': '+1 (555) 234-5678', 'email': 'sarah.johnson@lumina.clinic', 'color_hex': '#1565C0', 'created_at': now},
+        {'name': 'Dr. Ahmed Al-Mousawi', 'specialty': 'Endodontics & Restorative', 'phone': '+964 770 123 4567', 'email': 'ahmed@lumina.clinic', 'color_hex': '#1565C0', 'created_at': now},
         {'name': 'Dr. Michael Chen', 'specialty': 'Orthodontics & General', 'phone': '+1 (555) 345-6789', 'email': 'michael.chen@lumina.clinic', 'color_hex': '#00897B', 'created_at': now},
         {'name': 'Dr. Emily Taylor', 'specialty': 'Prosthodontics & Cosmetic', 'phone': '+1 (555) 456-7890', 'email': 'emily.taylor@lumina.clinic', 'color_hex': '#7B1FA2', 'created_at': now},
         {'name': 'Dr. Alex Smith', 'specialty': 'Oral Surgery & Implants', 'phone': '+1 (555) 567-8901', 'email': 'alex.smith@lumina.clinic', 'color_hex': '#E65100', 'created_at': now},

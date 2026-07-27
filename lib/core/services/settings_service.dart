@@ -66,7 +66,7 @@ class SettingsService {
 
       'rx_header': prefs.getString(_keyRxHeader) ?? 'LUMINA DENTAL CLINIC - PRESCRIPTION',
       'rx_footer': prefs.getString(_keyRxFooter) ?? 'Get well soon! Please present this slip at any pharmacy.',
-      'rx_signature': prefs.getString(_keyRxSignature) ?? 'Dr. Sarah Johnson (D.D.S)',
+      'rx_signature': prefs.getString(_keyRxSignature) ?? '',
       'rx_contact_info': prefs.getString(_keyRxContactInfo) ?? 'Tel: +1 (555) 100-2000 • Email: info@lumina.clinic',
       'rx_notes': prefs.getString(_keyRxNotes) ?? 'Take medications as instructed. Avoid cold drinks after procedure.',
 

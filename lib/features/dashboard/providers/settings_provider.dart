@@ -20,7 +20,7 @@ class SettingsProvider extends ChangeNotifier {
   // Prescription Customization
   String rxHeader = 'LUMINA DENTAL CLINIC - PRESCRIPTION';
   String rxFooter = 'Get well soon! Please present this slip at any pharmacy.';
-  String rxSignature = 'Dr. Sarah Johnson (D.D.S)';
+  String rxSignature = '';
   String rxContactInfo = 'Tel: +1 (555) 100-2000 • Email: info@lumina.clinic';
   String rxNotes = 'Take medications as instructed.';
 
