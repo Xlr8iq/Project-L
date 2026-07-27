@@ -1,5 +1,5 @@
 class Translations {
-  static const Map<String, String> ar = {
+  static final Map<String, String> ar = {
     // ─── GENERAL & NAVIGATION ───
     "Lumina": "لومينا",
     "Dental Clinic": "عيادة الأسنان",
