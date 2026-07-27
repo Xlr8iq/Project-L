@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
+import '../../../core/models/tooth.dart';
 import '../../../core/models/treatment_plan_item.dart';
 import '../../dashboard/providers/clinic_provider.dart';
 import '../../dashboard/providers/settings_provider.dart';
