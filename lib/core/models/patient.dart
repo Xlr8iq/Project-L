@@ -52,4 +52,30 @@ class Patient {
       dateOfBirth: map['date_of_birth'] != null ? DateTime.tryParse(map['date_of_birth']) : null,
     );
   }
+
+  Patient copyWith({
+    int? id,
+    String? name,
+    int? age,
+    String? gender,
+    DateTime? createdAt,
+    String? phone,
+    String? address,
+    String? emergencyContact,
+    String? emergencyPhone,
+    DateTime? dateOfBirth,
+  }) {
+    return Patient(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      createdAt: createdAt ?? this.createdAt,
+      phone: phone ?? this.phone,
+      address: address ?? this.address,
+      emergencyContact: emergencyContact ?? this.emergencyContact,
+      emergencyPhone: emergencyPhone ?? this.emergencyPhone,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+    );
+  }
 }

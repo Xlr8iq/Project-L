@@ -6,6 +6,9 @@ import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/tooth.dart';
 import '../models/treatment_plan_item.dart';
+import '../models/doctor.dart';
+import '../models/secretary.dart';
+import '../models/procedure_setting.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -301,19 +304,21 @@ CREATE TABLE secretaries (
   }
 
   // --- Doctors CRUD ---
-  Future<List<Map<String, dynamic>>> getDoctors() async {
+  Future<List<Doctor>> readAllDoctors() async {
     final db = await instance.database;
-    return await db.query('doctors', orderBy: 'id ASC');
+    final maps = await db.query('doctors', orderBy: 'id ASC');
+    return maps.map((json) => Doctor.fromMap(json)).toList();
   }
 
-  Future<int> insertDoctor(Map<String, dynamic> doctorMap) async {
+  Future<Doctor> createDoctor(Doctor doctor) async {
     final db = await instance.database;
-    return await db.insert('doctors', doctorMap);
+    final id = await db.insert('doctors', doctor.toMap());
+    return doctor.copyWith(id: id);
   }
 
-  Future<int> updateDoctor(int id, Map<String, dynamic> doctorMap) async {
+  Future<int> updateDoctor(Doctor doctor) async {
     final db = await instance.database;
-    return await db.update('doctors', doctorMap, where: 'id = ?', whereArgs: [id]);
+    return await db.update('doctors', doctor.toMap(), where: 'id = ?', whereArgs: [doctor.id]);
   }
 
   Future<int> deleteDoctor(int id) async {
@@ -322,19 +327,21 @@ CREATE TABLE secretaries (
   }
 
   // --- Procedures Settings CRUD ---
-  Future<List<Map<String, dynamic>>> getProcedureSettings() async {
+  Future<List<ProcedureSetting>> readAllProcedureSettings() async {
     final db = await instance.database;
-    return await db.query('procedure_settings', orderBy: 'id ASC');
+    final maps = await db.query('procedure_settings', orderBy: 'id ASC');
+    return maps.map((json) => ProcedureSetting.fromMap(json)).toList();
   }
 
-  Future<int> insertProcedureSetting(Map<String, dynamic> procMap) async {
+  Future<ProcedureSetting> createProcedureSetting(ProcedureSetting proc) async {
     final db = await instance.database;
-    return await db.insert('procedure_settings', procMap);
+    final id = await db.insert('procedure_settings', proc.toMap());
+    return proc.copyWith(id: id);
   }
 
-  Future<int> updateProcedureSetting(int id, Map<String, dynamic> procMap) async {
+  Future<int> updateProcedureSetting(ProcedureSetting proc) async {
     final db = await instance.database;
-    return await db.update('procedure_settings', procMap, where: 'id = ?', whereArgs: [id]);
+    return await db.update('procedure_settings', proc.toMap(), where: 'id = ?', whereArgs: [proc.id]);
   }
 
   Future<int> deleteProcedureSetting(int id) async {
@@ -343,19 +350,21 @@ CREATE TABLE secretaries (
   }
 
   // --- Secretaries CRUD ---
-  Future<List<Map<String, dynamic>>> getSecretaries() async {
+  Future<List<Secretary>> readAllSecretaries() async {
     final db = await instance.database;
-    return await db.query('secretaries', orderBy: 'id ASC');
+    final maps = await db.query('secretaries', orderBy: 'id ASC');
+    return maps.map((json) => Secretary.fromMap(json)).toList();
   }
 
-  Future<int> insertSecretary(Map<String, dynamic> secMap) async {
+  Future<Secretary> createSecretary(Secretary secretary) async {
     final db = await instance.database;
-    return await db.insert('secretaries', secMap);
+    final id = await db.insert('secretaries', secretary.toMap());
+    return secretary.copyWith(id: id);
   }
 
-  Future<int> updateSecretary(int id, Map<String, dynamic> secMap) async {
+  Future<int> updateSecretary(Secretary secretary) async {
     final db = await instance.database;
-    return await db.update('secretaries', secMap, where: 'id = ?', whereArgs: [id]);
+    return await db.update('secretaries', secretary.toMap(), where: 'id = ?', whereArgs: [secretary.id]);
   }
 
   Future<int> deleteSecretary(int id) async {
