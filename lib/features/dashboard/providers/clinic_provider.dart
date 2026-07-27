@@ -3,10 +3,12 @@ import '../../../core/database/database_helper.dart';
 import '../../../core/models/patient.dart';
 import '../../../core/models/appointment.dart';
 import '../../../core/models/treatment_plan_item.dart';
+import '../../../core/models/doctor.dart';
 
 class ClinicProvider extends ChangeNotifier {
   List<Patient> patients = [];
   List<Appointment> appointments = [];
+  List<Doctor> doctors = [];
   Map<int, List<TreatmentPlanItem>> _treatmentPlans = {};
   bool isLoading = false;
   int _webIdCounter = 1;
@@ -17,14 +19,57 @@ class ClinicProvider extends ChangeNotifier {
 
     if (!kIsWeb) {
       try {
+        doctors = await DatabaseHelper.instance.readAllDoctors();
         patients = await DatabaseHelper.instance.readAllPatients();
         appointments = await DatabaseHelper.instance.readAllAppointments();
       } catch (e) {
         debugPrint("DB Load Error: $e");
       }
+    } else {
+      if (doctors.isEmpty) {
+        doctors = [
+          Doctor(id: 1, name: 'Dr. Sarah Johnson', specialty: 'Endodontics & Restorative'),
+          Doctor(id: 2, name: 'Dr. Michael Chen', specialty: 'Orthodontics & General'),
+          Doctor(id: 3, name: 'Dr. Emily Taylor', specialty: 'Prosthodontics & Cosmetic'),
+          Doctor(id: 4, name: 'Dr. Alex Smith', specialty: 'Oral Surgery & Implants'),
+        ];
+      }
     }
 
     isLoading = false;
+    notifyListeners();
+  }
+
+  // ─── Doctor Management ───
+
+  Future<Doctor> addDoctor(Doctor doctor) async {
+    Doctor newDoc;
+    if (kIsWeb) {
+      newDoc = doctor.copyWith(id: _webIdCounter++);
+    } else {
+      newDoc = await DatabaseHelper.instance.createDoctor(doctor);
+    }
+    doctors.add(newDoc);
+    notifyListeners();
+    return newDoc;
+  }
+
+  Future<void> updateDoctor(Doctor doctor) async {
+    final index = doctors.indexWhere((d) => d.id == doctor.id);
+    if (index != -1) {
+      doctors[index] = doctor;
+      if (!kIsWeb) {
+        await DatabaseHelper.instance.updateDoctor(doctor);
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteDoctor(int doctorId) async {
+    doctors.removeWhere((d) => d.id == doctorId);
+    if (!kIsWeb) {
+      await DatabaseHelper.instance.deleteDoctor(doctorId);
+    }
     notifyListeners();
   }
 
@@ -57,6 +102,20 @@ class ClinicProvider extends ChangeNotifier {
     final list = _treatmentPlans[item.patientId] ?? [];
     list.add(newItem);
     _treatmentPlans[item.patientId] = list;
+
+    // Auto-sync appointment if a next visit date is set
+    if (newItem.nextVisitDate != null) {
+      await syncNextVisitAppointment(
+        patientId: newItem.patientId,
+        visitDate: newItem.nextVisitDate!,
+        procedureName: newItem.procedureName,
+        palmerCode: newItem.palmerCode,
+        visitNumber: newItem.currentVisit,
+        totalVisits: newItem.totalVisits,
+        doctorName: newItem.doctorName,
+      );
+    }
+
     notifyListeners();
     return newItem;
   }
@@ -70,6 +129,20 @@ class ClinicProvider extends ChangeNotifier {
         if (!kIsWeb) {
           await DatabaseHelper.instance.updateTreatmentPlanItem(item);
         }
+
+        // Auto-sync appointment whenever next visit date is updated or scheduled
+        if (item.nextVisitDate != null && item.status != TreatmentPlanStatus.completed) {
+          await syncNextVisitAppointment(
+            patientId: item.patientId,
+            visitDate: item.nextVisitDate!,
+            procedureName: item.procedureName,
+            palmerCode: item.palmerCode,
+            visitNumber: item.currentVisit,
+            totalVisits: item.totalVisits,
+            doctorName: item.doctorName,
+          );
+        }
+
         notifyListeners();
       }
     }
@@ -89,6 +162,40 @@ class ClinicProvider extends ChangeNotifier {
   Future<void> saveDraftTreatmentPlan(int patientId, List<TreatmentPlanItem> items) async {
     for (var item in items) {
       await addTreatmentPlanItem(item.copyWith(patientId: patientId));
+    }
+  }
+
+  // ─── Automatic Appointment Synchronization ───
+
+  Future<Appointment?> syncNextVisitAppointment({
+    required int patientId,
+    required DateTime visitDate,
+    required String procedureName,
+    required String palmerCode,
+    required int visitNumber,
+    required int totalVisits,
+    required String doctorName,
+  }) async {
+    final noteText = '$procedureName (Visit $visitNumber/$totalVisits) - Tooth $palmerCode • Doctor: $doctorName';
+
+    final existingIndex = appointments.indexWhere((a) =>
+      a.patientId == patientId &&
+      a.dateTime.year == visitDate.year &&
+      a.dateTime.month == visitDate.month &&
+      a.dateTime.day == visitDate.day &&
+      a.notes.contains(procedureName)
+    );
+
+    if (existingIndex != -1) {
+      final updatedAppt = appointments[existingIndex].copyWith(
+        dateTime: visitDate,
+        notes: noteText,
+      );
+      await updateAppointment(updatedAppt);
+      return updatedAppt;
+    } else {
+      final newAppt = await addAppointment(patientId, visitDate, noteText);
+      return newAppt;
     }
   }
 
@@ -188,5 +295,49 @@ class ClinicProvider extends ChangeNotifier {
   List<Appointment> getAppointmentsForPatient(int patientId) {
     return appointments.where((a) => a.patientId == patientId).toList()
       ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+  }
+
+  // ─── Synchronized Live Dashboard Metrics Getters ───
+
+  int get todayPatientsCount {
+    final now = DateTime.now();
+    final todayPatientIds = appointments.where((a) =>
+      a.dateTime.year == now.year &&
+      a.dateTime.month == now.month &&
+      a.dateTime.day == now.day
+    ).map((a) => a.patientId).toSet();
+    return todayPatientIds.length;
+  }
+
+  int get upcomingAppointmentsCount {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    return appointments.where((a) => a.dateTime.isAfter(todayStart) || a.dateTime.isAtSameMomentAs(todayStart)).length;
+  }
+
+  int get completedTreatmentsCount {
+    int total = 0;
+    for (var list in _treatmentPlans.values) {
+      total += list.where((i) => i.status == TreatmentPlanStatus.completed).length;
+    }
+    return total;
+  }
+
+  int get pendingTreatmentsCount {
+    int total = 0;
+    for (var list in _treatmentPlans.values) {
+      total += list.where((i) => i.status == TreatmentPlanStatus.planned || i.status == TreatmentPlanStatus.inProgress || i.status == TreatmentPlanStatus.waitingForLab).length;
+    }
+    return total;
+  }
+
+  double get totalOutstandingBalance {
+    double total = 0.0;
+    for (var list in _treatmentPlans.values) {
+      for (var item in list) {
+        total += item.remainingBalance;
+      }
+    }
+    return total;
   }
 }

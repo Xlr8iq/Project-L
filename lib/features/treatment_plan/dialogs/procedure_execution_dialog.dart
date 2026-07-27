@@ -29,7 +29,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
   late double _estimatedFee;
   late double _paidAmount;
   late TextEditingController _notesController;
-  late TextEditingController _doctorController;
+  late String _doctorName;
   DateTime? _nextVisitDate;
 
   @override
@@ -41,14 +41,13 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
     _estimatedFee = widget.item.estimatedFee;
     _paidAmount = widget.item.paidAmount;
     _notesController = TextEditingController(text: widget.item.notes);
-    _doctorController = TextEditingController(text: widget.item.doctorName);
+    _doctorName = widget.item.doctorName;
     _nextVisitDate = widget.item.nextVisitDate;
   }
 
   @override
   void dispose() {
     _notesController.dispose();
-    _doctorController.dispose();
     super.dispose();
   }
 
@@ -82,7 +81,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
       status: newStatus,
       estimatedFee: _estimatedFee,
       paidAmount: _paidAmount,
-      doctorName: _doctorController.text.trim(),
+      doctorName: _doctorName,
       notes: _notesController.text.trim(),
       nextVisitDate: _nextVisitDate,
       completedAt: markCompleted ? DateTime.now() : widget.item.completedAt,
@@ -97,6 +96,12 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
+    final provider = context.watch<ClinicProvider>();
+    final doctorList = provider.doctors.map((d) => d.name).toList();
+
+    if (doctorList.isNotEmpty && (_doctorName.isEmpty || !doctorList.contains(_doctorName))) {
+      _doctorName = doctorList.first;
+    }
 
     return AlertDialog(
       backgroundColor: Colors.white,
@@ -219,12 +224,16 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _doctorController,
+                    child: DropdownButtonFormField<String>(
                       decoration: InputDecoration(
-                        labelText: settings.translate('Doctor'),
+                        labelText: settings.translate('Assigned Doctor'),
                         prefixIcon: const Icon(Icons.medical_services_outlined),
                       ),
+                      value: _doctorName.isNotEmpty && doctorList.contains(_doctorName) ? _doctorName : (doctorList.isNotEmpty ? doctorList.first : null),
+                      items: doctorList
+                          .map((doc) => DropdownMenuItem(value: doc, child: Text(doc)))
+                          .toList(),
+                      onChanged: (val) => setState(() => _doctorName = val!),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -233,7 +242,7 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
                       onTap: _pickNextVisitDate,
                       child: InputDecorator(
                         decoration: InputDecoration(
-                          labelText: settings.translate('Next Visit Date'),
+                          labelText: settings.translate('Next Visit Date (Auto-Schedules)'),
                           prefixIcon: const Icon(Icons.event),
                         ),
                         child: Text(

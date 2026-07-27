@@ -6,6 +6,7 @@ import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/tooth.dart';
 import '../models/treatment_plan_item.dart';
+import '../models/doctor.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -23,7 +24,7 @@ class DatabaseHelper {
     if (kIsWeb) {
       var factory = databaseFactoryFfiWeb;
       return await factory.openDatabase(filePath, options: OpenDatabaseOptions(
-        version: 4,
+        version: 5,
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       ));
@@ -32,7 +33,7 @@ class DatabaseHelper {
       final path = join(dbPath, filePath);
       return await openDatabase(
         path, 
-        version: 4, 
+        version: 5, 
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       );
@@ -80,6 +81,24 @@ CREATE TABLE IF NOT EXISTS treatment_plans (
 ''');
         } catch (e) {
           debugPrint("Database Upgrade V4 Warning: $e");
+        }
+      }
+      if (oldVersion < 5) {
+        try {
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS doctors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  specialty TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
+  color_hex TEXT,
+  created_at TEXT NOT NULL
+)
+''');
+          await _seedDefaultDoctors(db);
+        } catch (e) {
+          debugPrint("Database Upgrade V5 Warning: $e");
         }
       }
     }
@@ -149,6 +168,66 @@ CREATE TABLE treatment_plans (
   FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
 )
 ''');
+
+    await db.execute('''
+CREATE TABLE doctors (
+  id $idType,
+  name $textType,
+  specialty $textType,
+  phone TEXT,
+  email TEXT,
+  color_hex TEXT,
+  created_at $textType
+)
+''');
+
+    await _seedDefaultDoctors(db);
+  }
+
+  Future<void> _seedDefaultDoctors(Database db) async {
+    final countResult = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM doctors'));
+    if (countResult == 0) {
+      final now = DateTime.now().toIso8601String();
+      final defaultDoctors = [
+        {'name': 'Dr. Sarah Johnson', 'specialty': 'Endodontics & Restorative', 'phone': '+1 (555) 234-5678', 'email': 'sarah.johnson@lumina.clinic', 'color_hex': '#1565C0', 'created_at': now},
+        {'name': 'Dr. Michael Chen', 'specialty': 'Orthodontics & General', 'phone': '+1 (555) 345-6789', 'email': 'michael.chen@lumina.clinic', 'color_hex': '#00897B', 'created_at': now},
+        {'name': 'Dr. Emily Taylor', 'specialty': 'Prosthodontics & Cosmetic', 'phone': '+1 (555) 456-7890', 'email': 'emily.taylor@lumina.clinic', 'color_hex': '#7B1FA2', 'created_at': now},
+        {'name': 'Dr. Alex Smith', 'specialty': 'Oral Surgery & Implants', 'phone': '+1 (555) 567-8901', 'email': 'alex.smith@lumina.clinic', 'color_hex': '#E65100', 'created_at': now},
+      ];
+
+      for (var d in defaultDoctors) {
+        await db.insert('doctors', d);
+      }
+    }
+  }
+
+  // --- Doctors ---
+  Future<Doctor> createDoctor(Doctor doctor) async {
+    final db = await instance.database;
+    final id = await db.insert('doctors', doctor.toMap());
+    return doctor.copyWith(id: id);
+  }
+
+  Future<List<Doctor>> readAllDoctors() async {
+    final db = await instance.database;
+    const orderBy = 'name ASC';
+    final result = await db.query('doctors', orderBy: orderBy);
+    return result.map((json) => Doctor.fromMap(json)).toList();
+  }
+
+  Future<int> updateDoctor(Doctor doctor) async {
+    final db = await instance.database;
+    return db.update(
+      'doctors',
+      doctor.toMap(),
+      where: 'id = ?',
+      whereArgs: [doctor.id],
+    );
+  }
+
+  Future<int> deleteDoctor(int id) async {
+    final db = await instance.database;
+    return db.delete('doctors', where: 'id = ?', whereArgs: [id]);
   }
 
   // --- Patients ---

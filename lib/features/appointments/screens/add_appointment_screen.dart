@@ -35,7 +35,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   // Appointment Form Fields
   DateTime _appointmentDate = DateTime.now();
   TimeOfDay _appointmentTime = TimeOfDay.now();
-  String _selectedDoctor = 'Dr. Alex Smith';
+  String _selectedDoctor = '';
   String _appointmentType = 'Consultation';
   String _adminNotes = '';
 
@@ -47,13 +47,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
   // Status Field
   String _appointmentStatus = 'Scheduled';
-
-  final List<String> _doctors = [
-    'Dr. Alex Smith',
-    'Dr. Sarah Johnson',
-    'Dr. Michael Chen',
-    'Dr. Emily Taylor',
-  ];
 
   final List<String> _appointmentTypes = [
     'New Patient',
@@ -76,6 +69,15 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     'Cancelled',
     'No Show',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final provider = Provider.of<ClinicProvider>(context, listen: false);
+    if (provider.doctors.isNotEmpty) {
+      _selectedDoctor = provider.doctors.first.name;
+    }
+  }
 
   @override
   void dispose() {
@@ -187,7 +189,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         return;
       }
 
-      // Payment validation if fee is enabled
       if (_chargeConsultationFee && _paidToday > _consultationFee) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -266,7 +267,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
           }
         }
 
-        // Construct administrative notes
         final paymentSummary = _chargeConsultationFee
             ? 'Fee: \$${_consultationFee.toStringAsFixed(2)} | Paid: \$${_paidToday.toStringAsFixed(2)} | Bal: \$${_remainingBalance.toStringAsFixed(2)} ($_paymentMethod)'
             : 'No Consultation Fee';
@@ -308,6 +308,12 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
+    final provider = context.watch<ClinicProvider>();
+    final doctorList = provider.doctors.map((d) => d.name).toList();
+
+    if (doctorList.isNotEmpty && (_selectedDoctor.isEmpty || !doctorList.contains(_selectedDoctor))) {
+      _selectedDoctor = doctorList.first;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -337,7 +343,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Row 1: Unified Full Name Autocomplete Field
                         LayoutBuilder(
                           builder: (context, constraints) {
                             return RawAutocomplete<Patient>(
@@ -349,7 +354,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                 if (query.isEmpty) {
                                   return const Iterable<Patient>.empty();
                                 }
-                                final provider = Provider.of<ClinicProvider>(context, listen: false);
                                 return provider.patients.where((p) {
                                   final nameMatch = p.name.toLowerCase().contains(query);
                                   final phoneMatch = p.phone.contains(query);
@@ -436,7 +440,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           },
                         ),
 
-                        // Existing Patient Selected Summary Badge & Read-Only Doctor Treatment Preview
                         if (_selectedPatient != null) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -484,7 +487,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
                         const SizedBox(height: 16),
 
-                        // Row 2: Gender, Age (Numeric), Phone Number
                         Row(
                           children: [
                             Expanded(
@@ -535,7 +537,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Row 3: Address (Optional)
                         TextFormField(
                           controller: _addressController,
                           decoration: const InputDecoration(
@@ -545,7 +546,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Row 4: Emergency Contact Name & Number (Optional)
                         Row(
                           children: [
                             Expanded(
@@ -618,8 +618,8 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   labelText: 'Doctor',
                                   prefixIcon: Icon(Icons.medical_services_outlined),
                                 ),
-                                value: _selectedDoctor,
-                                items: _doctors
+                                value: _selectedDoctor.isNotEmpty ? _selectedDoctor : null,
+                                items: doctorList
                                     .map((doc) => DropdownMenuItem(value: doc, child: Text(doc)))
                                     .toList(),
                                 onChanged: (val) => setState(() => _selectedDoctor = val!),
@@ -657,14 +657,13 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ─── CARD 3: PAYMENT (With Consultation Fee Toggle) ───
+                  // ─── CARD 3: PAYMENT ───
                   _buildCard(
                     title: 'Payment',
                     icon: Icons.payments_outlined,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Consultation Fee Toggle Switch
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
@@ -707,7 +706,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           ),
                         ),
 
-                        // IF OFF: Show Free / Pay Later badge
                         if (!_chargeConsultationFee) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -732,7 +730,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           ),
                         ],
 
-                        // IF ON: Display Fee, Paid Today, Method & Auto-Calculated Remaining Balance
                         if (_chargeConsultationFee) ...[
                           const SizedBox(height: 20),
                           Row(
@@ -798,7 +795,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Real-time Remaining Balance Bar
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                             decoration: BoxDecoration(
