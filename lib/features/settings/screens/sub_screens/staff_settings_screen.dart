@@ -29,6 +29,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
   }
 
   void _showDoctorDialog(BuildContext context, [Doctor? doctor]) {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     final nameCtrl = TextEditingController(text: doctor?.name ?? '');
     final specialtyCtrl = TextEditingController(text: doctor?.specialty ?? 'General Dentist');
     final phoneCtrl = TextEditingController(text: doctor?.phone ?? '');
@@ -37,35 +38,35 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(doctor == null ? 'Add Doctor' : 'Edit Doctor'),
+        title: Text(doctor == null ? settings.translate('Add Doctor') : settings.translate('Edit Doctor')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Full Name *', prefixIcon: Icon(Icons.person)),
+                decoration: InputDecoration(labelText: settings.translate('Doctor Name *'), prefixIcon: const Icon(Icons.person)),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: specialtyCtrl,
-                decoration: const InputDecoration(labelText: 'Specialty *', prefixIcon: Icon(Icons.medical_services)),
+                decoration: InputDecoration(labelText: settings.translate('Specialty *'), prefixIcon: const Icon(Icons.medical_services)),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: phoneCtrl,
-                decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone)),
+                decoration: InputDecoration(labelText: settings.translate('Phone Number *'), prefixIcon: const Icon(Icons.phone)),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: emailCtrl,
-                decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
+                decoration: InputDecoration(labelText: settings.translate('Email Address (Optional)'), prefixIcon: const Icon(Icons.email)),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(settings.translate('Cancel'))),
           ElevatedButton(
             onPressed: () async {
               if (nameCtrl.text.trim().isEmpty) return;
@@ -92,7 +93,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
               if (!mounted) return;
               Navigator.pop(context);
             },
-            child: const Text('Save'),
+            child: Text(settings.translate('Save')),
           ),
         ],
       ),
@@ -100,6 +101,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
   }
 
   void _showSecretaryDialog(BuildContext context, [Secretary? secretary]) {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     final nameCtrl = TextEditingController(text: secretary?.name ?? '');
     final phoneCtrl = TextEditingController(text: secretary?.phone ?? '');
     final usernameCtrl = TextEditingController(text: secretary?.username ?? '');
@@ -108,19 +110,19 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(secretary == null ? 'Add Secretary' : 'Edit Secretary'),
+        title: Text(secretary == null ? settings.translate('Add Secretary') : settings.translate('Edit Secretary')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Full Name *', prefixIcon: Icon(Icons.person)),
+                decoration: InputDecoration(labelText: settings.translate('Secretary Name *'), prefixIcon: const Icon(Icons.person)),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: phoneCtrl,
-                decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone)),
+                decoration: InputDecoration(labelText: settings.translate('Phone Number *'), prefixIcon: const Icon(Icons.phone)),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -137,7 +139,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(settings.translate('Cancel'))),
           ElevatedButton(
             onPressed: () async {
               if (nameCtrl.text.trim().isEmpty || usernameCtrl.text.trim().isEmpty) return;
@@ -164,7 +166,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
               if (!mounted) return;
               Navigator.pop(context);
             },
-            child: const Text('Save'),
+            child: Text(settings.translate('Save')),
           ),
         ],
       ),
@@ -201,7 +203,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          settings.translate('Clinic Doctors'),
+                          settings.translate('Doctors'),
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                         ElevatedButton.icon(
@@ -218,7 +220,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
                     const SizedBox(height: 16),
                     Expanded(
                       child: clinic.doctors.isEmpty
-                          ? Center(child: Text(settings.translate('No doctors configured.')))
+                          ? Center(child: Text(settings.translate('No past appointments found.')))
                           : ListView.builder(
                               itemCount: clinic.doctors.length,
                               itemBuilder: (context, index) {
@@ -262,7 +264,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          settings.translate('Clinic Secretaries'),
+                          settings.translate('Secretaries'),
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                         ElevatedButton.icon(
@@ -279,7 +281,7 @@ class _StaffSettingsScreenState extends State<StaffSettingsScreen> with SingleTi
                     const SizedBox(height: 16),
                     Expanded(
                       child: clinic.secretaries.isEmpty
-                          ? Center(child: Text(settings.translate('No secretaries configured.')))
+                          ? Center(child: Text(settings.translate('No past appointments found.')))
                           : ListView.builder(
                               itemCount: clinic.secretaries.length,
                               itemBuilder: (context, index) {

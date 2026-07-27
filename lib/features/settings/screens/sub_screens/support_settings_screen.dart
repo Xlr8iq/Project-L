@@ -6,37 +6,38 @@ import '../../../dashboard/providers/settings_provider.dart';
 class SupportSettingsScreen extends StatelessWidget {
   const SupportSettingsScreen({Key? key}) : super(key: key);
 
-  void _showFeedbackDialog(BuildContext context, String type) {
+  void _showFeedbackDialog(BuildContext context, String typeKey) {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     final msgCtrl = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Send $type'),
+        title: Text(settings.translate(typeKey)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Describe your $type in detail:'),
+            Text(settings.translate('Need help? Contact support or submit feedback.')),
             const SizedBox(height: 12),
             TextField(
               controller: msgCtrl,
-              decoration: const InputDecoration(hintText: 'Type message here...'),
+              decoration: InputDecoration(hintText: settings.translate('Send Feedback')),
               maxLines: 4,
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(settings.translate('Cancel'))),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('$type submitted! Thank you.'),
+                  content: Text(settings.translate('Send Feedback')),
                   backgroundColor: Colors.green,
                 ),
               );
             },
-            child: const Text('Submit'),
+            child: Text(settings.translate('Save')),
           ),
         ],
       ),
@@ -49,7 +50,7 @@ class SupportSettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(settings.translate('Support & Feedback')),
+        title: Text(settings.translate('Support & Developer')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -63,12 +64,12 @@ class SupportSettingsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.help_outline, color: AppTheme.primaryBlue, size: 28),
-                        SizedBox(width: 12),
+                      children: [
+                        const Icon(Icons.help_outline, color: AppTheme.primaryBlue, size: 28),
+                        const SizedBox(width: 12),
                         Text(
-                          'Help, Support & Feedback',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                          settings.translate('Support & Technical Assistance'),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                       ],
                     ),
@@ -81,10 +82,10 @@ class SupportSettingsScreen extends StatelessWidget {
                         backgroundColor: AppTheme.primaryBlue,
                         child: Icon(Icons.code, color: Colors.white),
                       ),
-                      title: const Text('Contact Developer', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('Support Email: support@lumina-dental.com • GitHub: @Xlr8iq'),
+                      title: Text(settings.translate('Contact Support'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text('support@lumina-dental.com • GitHub: @Xlr8iq'),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _showFeedbackDialog(context, 'Support Inquiry'),
+                      onTap: () => _showFeedbackDialog(context, 'Contact Support'),
                     ),
                     const Divider(height: 1, color: AppTheme.borderLight),
 
@@ -93,10 +94,10 @@ class SupportSettingsScreen extends StatelessWidget {
                         backgroundColor: Colors.red.shade100,
                         child: const Icon(Icons.bug_report, color: Colors.red),
                       ),
-                      title: const Text('Report Bug', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('Encountered an issue? Submit a bug report directly.'),
+                      title: Text(settings.translate('Report a Bug'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(settings.translate('Technical assistance, bug reports, and feedback')),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _showFeedbackDialog(context, 'Bug Report'),
+                      onTap: () => _showFeedbackDialog(context, 'Report a Bug'),
                     ),
                     const Divider(height: 1, color: AppTheme.borderLight),
 
@@ -105,10 +106,10 @@ class SupportSettingsScreen extends StatelessWidget {
                         backgroundColor: Colors.amber.shade100,
                         child: const Icon(Icons.lightbulb_outline, color: Colors.amber),
                       ),
-                      title: const Text('Request Feature', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('Suggest new capabilities or clinical workflow enhancements.'),
+                      title: Text(settings.translate('Request a Feature'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(settings.translate('Contact support, report bugs & request features')),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _showFeedbackDialog(context, 'Feature Request'),
+                      onTap: () => _showFeedbackDialog(context, 'Request a Feature'),
                     ),
                   ],
                 ),

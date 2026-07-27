@@ -48,7 +48,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
         surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          '${settings.translate("Appointment Details")} (${DateFormat('MMM d, yyyy').format(appointment.dateTime)})',
+          '${settings.translate("Appointment Details")} (${settings.formatDate(appointment.dateTime)})',
           style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         content: SingleChildScrollView(
@@ -136,7 +136,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
                 foregroundColor: AppTheme.primaryBlue,
               ),
               icon: const Icon(Icons.list_alt),
-              label: Text(settings.translate('Full Treatment Roadmap')),
+              label: Text(settings.translate('Treatment Plan')),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -190,7 +190,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '${settings.translate("Registered")}: ${DateFormat('MMM d, yyyy').format(widget.patient.createdAt)}',
+                        '${settings.translate("Registered")}: ${settings.formatDate(widget.patient.createdAt)}',
                         style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                       ),
                       const SizedBox(height: 24),
@@ -212,9 +212,9 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
                       const SizedBox(height: 20),
                       const Divider(color: AppTheme.borderLight),
                       const SizedBox(height: 16),
-                      _buildDemoRow(Icons.cake, settings.translate('Age'), '${widget.patient.age} years old'),
-                      _buildDemoRow(Icons.wc, settings.translate('Gender'), settings.translate(widget.patient.gender)),
-                      _buildDemoRow(Icons.phone, settings.translate('Phone'), widget.patient.phone.isNotEmpty ? widget.patient.phone : settings.translate('N/A')),
+                      _buildDemoRow(Icons.cake, settings.translate('Age *'), '${widget.patient.age}'),
+                      _buildDemoRow(Icons.wc, settings.translate('Gender *'), settings.translate(widget.patient.gender)),
+                      _buildDemoRow(Icons.phone, settings.translate('Phone Number *'), widget.patient.phone.isNotEmpty ? widget.patient.phone : settings.translate('N/A')),
                       _buildDemoRow(Icons.medical_information, settings.translate('Patient ID'), '#${widget.patient.id.toString().padLeft(4, '0')}'),
                     ],
                   ),
@@ -281,13 +281,13 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
             const Icon(Icons.assignment_outlined, size: 54, color: AppTheme.textSecondary),
             const SizedBox(height: 12),
             Text(
-              settings.translate('No active treatment plan items.'),
+              settings.translate('No treatment plan items found.'),
               style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               icon: const Icon(Icons.add_chart),
-              label: Text(settings.translate('Open Odontogram to Diagnose')),
+              label: Text(settings.translate('+ Diagnose / Open Chart')),
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => ChartingScreen(patient: widget.patient)));
               },
@@ -309,15 +309,15 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
               child: Icon(item.statusIcon, color: item.statusColor, size: 20),
             ),
             title: Text(
-              item.procedureName,
+              settings.translate(item.procedureName),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            subtitle: Text('Tooth: ${item.palmerDisplay} • ${item.statusDisplay}'),
+            subtitle: Text('${settings.translate("Tooth")}: ${item.palmerDisplay} • ${settings.translate(item.statusDisplay)}'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '\$${item.estimatedFee.toStringAsFixed(0)}',
+                  settings.formatCurrency(item.estimatedFee),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryBlue),
                 ),
                 const SizedBox(width: 12),
@@ -365,21 +365,9 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
                       color: AppTheme.primaryBlue.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          DateFormat('MMM').format(appt.dateTime).toUpperCase(),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
-                        ),
-                        Text(
-                          DateFormat('d').format(appt.dateTime),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppTheme.primaryBlue),
-                        ),
-                        Text(
-                          DateFormat('yyyy').format(appt.dateTime),
-                          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                        ),
-                      ],
+                    child: Text(
+                      settings.formatDate(appt.dateTime),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryBlue),
                     ),
                   ),
                   const SizedBox(width: 20),
@@ -388,7 +376,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> with Single
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          appt.notes.isNotEmpty ? appt.notes : settings.translate('General Checkup'),
+                          appt.notes.isNotEmpty ? appt.notes : settings.translate('Check-up'),
                           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                         const SizedBox(height: 6),

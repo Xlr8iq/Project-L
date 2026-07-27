@@ -50,7 +50,7 @@ class _PrescriptionSettingsScreenState extends State<PrescriptionSettingsScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(provider.translate('Prescription settings updated successfully!')),
+        content: Text(provider.translate('Prescription settings updated!')),
         backgroundColor: Colors.green,
       ),
     );
@@ -80,14 +80,14 @@ class _PrescriptionSettingsScreenState extends State<PrescriptionSettingsScreen>
                         const Icon(Icons.description_outlined, color: AppTheme.primaryBlue, size: 28),
                         const SizedBox(width: 12),
                         Text(
-                          provider.translate('Printed Prescription Customization'),
+                          provider.translate('Prescription Settings'),
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      provider.translate('Customize header, signature, and footers automatically printed on prescription PDFs.'),
+                      provider.translate('Header branding, footers, signature & notes'),
                       style: const TextStyle(color: AppTheme.textSecondary),
                     ),
                     const SizedBox(height: 24),
@@ -97,7 +97,7 @@ class _PrescriptionSettingsScreenState extends State<PrescriptionSettingsScreen>
                     TextField(
                       controller: _headerController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Prescription Header Title'),
+                        labelText: provider.translate('Header Text'),
                         prefixIcon: const Icon(Icons.title),
                       ),
                     ),
@@ -106,7 +106,7 @@ class _PrescriptionSettingsScreenState extends State<PrescriptionSettingsScreen>
                     TextField(
                       controller: _signatureController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Doctor Signature / Stamp Text'),
+                        labelText: provider.translate('Doctor Stamp / Signature'),
                         prefixIcon: const Icon(Icons.draw),
                       ),
                     ),
@@ -115,7 +115,7 @@ class _PrescriptionSettingsScreenState extends State<PrescriptionSettingsScreen>
                     TextField(
                       controller: _contactController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Contact Information Line'),
+                        labelText: provider.translate('Contact Info Line'),
                         prefixIcon: const Icon(Icons.contact_mail_outlined),
                       ),
                     ),
@@ -124,7 +124,7 @@ class _PrescriptionSettingsScreenState extends State<PrescriptionSettingsScreen>
                     TextField(
                       controller: _notesController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Default Patient Prescription Advice / Notes'),
+                        labelText: provider.translate('Default Instructions / Notes'),
                         prefixIcon: const Icon(Icons.notes),
                       ),
                       maxLines: 2,
@@ -134,7 +134,7 @@ class _PrescriptionSettingsScreenState extends State<PrescriptionSettingsScreen>
                     TextField(
                       controller: _footerController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Footer Disclaimer'),
+                        labelText: provider.translate('Footer Text'),
                         prefixIcon: const Icon(Icons.short_text),
                       ),
                       maxLines: 2,

@@ -78,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
       },
       {
         'title': settings.translate('About System'),
-        'subtitle': settings.translate('App version, database schema v6 & licenses'),
+        'subtitle': settings.translate('App version, database schema & licenses'),
         'icon': Icons.info_outline,
         'color': Colors.amber.shade800,
         'screen': const AboutSettingsScreen(),
@@ -97,7 +97,7 @@ class SettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    settings.translate('Settings'),
+                    settings.translate('Professional Settings'),
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 4),

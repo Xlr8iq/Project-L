@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme.dart';
 import '../../../dashboard/providers/settings_provider.dart';
@@ -16,21 +15,23 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
   bool _autoBackupEnabled = true;
 
   void _createBackup() {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     setState(() {
       _lastBackup = DateTime.now();
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Database backup created successfully! Saved to clinic storage.'),
+      SnackBar(
+        content: Text(settings.translate('Backup created successfully!')),
         backgroundColor: Colors.green,
       ),
     );
   }
 
   void _restoreBackup() {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Backup restored cleanly! All records synced.'),
+      SnackBar(
+        content: Text(settings.translate('Database restored successfully!')),
         backgroundColor: Colors.green,
       ),
     );
@@ -56,12 +57,12 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.backup_outlined, color: AppTheme.primaryBlue, size: 28),
-                        SizedBox(width: 12),
+                      children: [
+                        const Icon(Icons.backup_outlined, color: AppTheme.primaryBlue, size: 28),
+                        const SizedBox(width: 12),
                         Text(
-                          'Database Backup & Restore',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                          settings.translate('Database Backup & Recovery'),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                       ],
                     ),
@@ -86,11 +87,11 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Last Successful Backup:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(settings.translate('Last Backup:'), style: const TextStyle(fontWeight: FontWeight.bold)),
                                   Text(
                                     _lastBackup != null
-                                        ? DateFormat('EEE, MMM dd, yyyy • hh:mm a').format(_lastBackup!)
-                                        : 'Never',
+                                        ? settings.formatDate(_lastBackup!)
+                                        : settings.translate('Never'),
                                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                                   ),
                                 ],
@@ -103,7 +104,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
                               foregroundColor: Colors.white,
                             ),
                             icon: const Icon(Icons.cloud_upload_outlined),
-                            label: const Text('Create Backup Now'),
+                            label: Text(settings.translate('Create Instant Backup')),
                             onPressed: _createBackup,
                           ),
                         ],
@@ -113,8 +114,8 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
                     const SizedBox(height: 24),
 
                     SwitchListTile(
-                      title: const Text('Automatic Daily Backup', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('Automatically back up clinic database every evening.'),
+                      title: Text(settings.translate('Automatic Daily Backups'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(settings.translate('Create database backups to protect patient records and financial data.')),
                       value: _autoBackupEnabled,
                       activeColor: AppTheme.primaryBlue,
                       onChanged: (val) => setState(() => _autoBackupEnabled = val),
@@ -124,18 +125,12 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
                     const Divider(color: AppTheme.borderLight),
                     const SizedBox(height: 20),
 
-                    Text(
-                      settings.translate('Advanced Operations'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                    ),
-                    const SizedBox(height: 16),
-
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.download, color: AppTheme.primaryBlue),
-                            label: const Text('Export Database (.db)'),
+                            label: Text(settings.translate('Create Instant Backup')),
                             onPressed: _createBackup,
                             style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
                           ),
@@ -144,7 +139,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
                         Expanded(
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.restore, color: Colors.orange),
-                            label: const Text('Restore from File'),
+                            label: Text(settings.translate('Restore Database')),
                             onPressed: _restoreBackup,
                             style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
                           ),

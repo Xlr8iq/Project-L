@@ -76,18 +76,18 @@ class _WhatsappSettingsScreenState extends State<WhatsappSettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.chat_bubble_outline, color: Colors.green, size: 28),
-                        SizedBox(width: 12),
+                      children: [
+                        const Icon(Icons.chat_bubble_outline, color: Colors.green, size: 28),
+                        const SizedBox(width: 12),
                         Text(
-                          'WhatsApp & Automated Reminders',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                          provider.translate('WhatsApp & Reminders'),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      provider.translate('Configure templates used for sending WhatsApp messages to patients.'),
+                      provider.translate('Message templates for appointments and recalls'),
                       style: const TextStyle(color: AppTheme.textSecondary),
                     ),
                     const SizedBox(height: 20),
@@ -104,7 +104,7 @@ class _WhatsappSettingsScreenState extends State<WhatsappSettingsScreen> {
                     const SizedBox(height: 20),
 
                     Text(
-                      provider.translate('Message Templates ({patient}, {date}, {time})'),
+                      provider.translate('Automated reminder templates & WhatsApp number'),
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                     ),
                     const SizedBox(height: 12),
@@ -132,7 +132,7 @@ class _WhatsappSettingsScreenState extends State<WhatsappSettingsScreen> {
                     TextField(
                       controller: _cancellationController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Cancellation Notice Template'),
+                        labelText: provider.translate('Appointment Cancellation Template'),
                         prefixIcon: const Icon(Icons.cancel_outlined),
                       ),
                       maxLines: 2,
@@ -142,7 +142,7 @@ class _WhatsappSettingsScreenState extends State<WhatsappSettingsScreen> {
                     TextField(
                       controller: _recallController,
                       decoration: InputDecoration(
-                        labelText: provider.translate('Recall / 6-Month Checkup Template'),
+                        labelText: provider.translate('Patient Recall Template'),
                         prefixIcon: const Icon(Icons.event_repeat),
                       ),
                       maxLines: 2,
@@ -160,7 +160,7 @@ class _WhatsappSettingsScreenState extends State<WhatsappSettingsScreen> {
                           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         onPressed: _saveWhatsappSettings,
-                        child: Text(provider.translate('Save WhatsApp Templates')),
+                        child: Text(provider.translate('Save WhatsApp Settings')),
                       ),
                     ),
                   ],
