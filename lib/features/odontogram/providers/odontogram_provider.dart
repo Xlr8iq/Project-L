@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/models/tooth.dart';
+import '../../../core/models/treatment_plan_item.dart';
 import '../../../core/database/database_helper.dart';
+import '../../dashboard/providers/clinic_provider.dart';
 
 class OdontogramProvider extends ChangeNotifier {
   int? patientId;
@@ -18,6 +20,10 @@ class OdontogramProvider extends ChangeNotifier {
 
   int? _selectedTooth;
   int? get selectedTooth => _selectedTooth;
+
+  // ─── Draft Diagnosis Treatment Plan Items ───
+  final Map<int, ProcedureType> _draftProcedures = {};
+  Map<int, ProcedureType> get draftProcedures => Map.unmodifiable(_draftProcedures);
 
   // ─── Surface Selection ───
   final Set<Surface> _selectedSurfaces = {};
@@ -40,6 +46,7 @@ class OdontogramProvider extends ChangeNotifier {
   // ─── Chart Loading ───
   Future<void> loadChart(int patientId) async {
     this.patientId = patientId;
+    _draftProcedures.clear();
     if (!kIsWeb) {
       try {
         final savedTeeth = await DatabaseHelper.instance.getTeethForPatient(patientId);
@@ -47,7 +54,7 @@ class OdontogramProvider extends ChangeNotifier {
           _teeth[tooth.number] = tooth;
         }
       } catch (e) {
-        print("Error loading chart: $e");
+        debugPrint("Error loading chart: $e");
       }
     }
     notifyListeners();
@@ -59,24 +66,74 @@ class OdontogramProvider extends ChangeNotifier {
       _selectedTooth = null;
     } else {
       _selectedTooth = number;
-      _selectedSurfaces.clear(); // Clear surfaces when switching teeth
+      _selectedSurfaces.clear();
     }
     notifyListeners();
   }
 
-  // ─── Procedure ───
-  Future<void> applyProcedure(ProcedureType type) async {
+  // ─── Draft Diagnosis Procedure Assignment ───
+  void assignDraftProcedure(ProcedureType type) {
     if (_selectedTooth != null) {
-      _teeth[_selectedTooth!] = _teeth[_selectedTooth!]!.copyWith(procedure: type);
+      if (type == ProcedureType.none) {
+        _draftProcedures.remove(_selectedTooth);
+        _teeth[_selectedTooth!] = _teeth[_selectedTooth!]!.copyWith(procedure: ProcedureType.none);
+      } else {
+        _draftProcedures[_selectedTooth!] = type;
+        _teeth[_selectedTooth!] = _teeth[_selectedTooth!]!.copyWith(procedure: type);
+      }
       notifyListeners();
-      
-      if (patientId != null && !kIsWeb) {
-        try {
-          await DatabaseHelper.instance.saveToothProcedure(patientId!, _teeth[_selectedTooth!]!);
-        } catch (e) {
-          print("Error saving procedure: $e");
-        }
+    }
+  }
+
+  void removeDraftProcedure(int toothNumber) {
+    _draftProcedures.remove(toothNumber);
+    _teeth[toothNumber] = _teeth[toothNumber]!.copyWith(procedure: ProcedureType.none);
+    notifyListeners();
+  }
+
+  // Legacy method for direct procedure application
+  Future<void> applyProcedure(ProcedureType type) async {
+    assignDraftProcedure(type);
+  }
+
+  // ─── Save Treatment Plan (Persists Draft Diagnosis) ───
+  Future<void> saveTreatmentPlan(ClinicProvider clinicProvider) async {
+    if (patientId == null) return;
+
+    for (var entry in _draftProcedures.entries) {
+      final toothNum = entry.key;
+      final proc = entry.value;
+
+      if (proc != ProcedureType.none) {
+        // Save tooth overlay to teeth_chart table
+        await DatabaseHelper.instance.saveToothProcedure(patientId!, _teeth[toothNum]!);
+
+        // Default total visits based on procedure type
+        int visits = 1;
+        if (proc == ProcedureType.endo) visits = 3; // RCT usually multi-visit
+        if (proc == ProcedureType.crown || proc == ProcedureType.bridge) visits = 2;
+        if (proc == ProcedureType.implant) visits = 3;
+
+        double fee = 50.0;
+        if (proc == ProcedureType.endo) fee = 180.0;
+        if (proc == ProcedureType.crown) fee = 250.0;
+        if (proc == ProcedureType.implant) fee = 400.0;
+        if (proc == ProcedureType.extraction) fee = 70.0;
+
+        final item = TreatmentPlanItem(
+          patientId: patientId!,
+          toothNumber: toothNum,
+          procedureType: proc,
+          status: TreatmentPlanStatus.planned,
+          totalVisits: visits,
+          estimatedFee: fee,
+        );
+
+        await clinicProvider.addTreatmentPlanItem(item);
       }
     }
+
+    _draftProcedures.clear();
+    notifyListeners();
   }
 }

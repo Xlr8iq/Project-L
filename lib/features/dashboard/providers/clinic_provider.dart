@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../core/models/patient.dart';
 import '../../../core/models/appointment.dart';
+import '../../../core/models/treatment_plan_item.dart';
 
 class ClinicProvider extends ChangeNotifier {
   List<Patient> patients = [];
   List<Appointment> appointments = [];
+  Map<int, List<TreatmentPlanItem>> _treatmentPlans = {};
   bool isLoading = false;
   int _webIdCounter = 1;
 
@@ -25,6 +27,72 @@ class ClinicProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+
+  // ─── Treatment Plan Management ───
+
+  List<TreatmentPlanItem> getTreatmentPlan(int patientId) {
+    return _treatmentPlans[patientId] ?? [];
+  }
+
+  Future<void> loadTreatmentPlan(int patientId) async {
+    if (!kIsWeb) {
+      try {
+        final items = await DatabaseHelper.instance.getTreatmentPlanForPatient(patientId);
+        _treatmentPlans[patientId] = items;
+        notifyListeners();
+      } catch (e) {
+        debugPrint("Error loading treatment plan: $e");
+      }
+    }
+  }
+
+  Future<TreatmentPlanItem> addTreatmentPlanItem(TreatmentPlanItem item) async {
+    TreatmentPlanItem newItem;
+    if (kIsWeb) {
+      newItem = item.copyWith(id: _webIdCounter++);
+    } else {
+      newItem = await DatabaseHelper.instance.createTreatmentPlanItem(item);
+    }
+
+    final list = _treatmentPlans[item.patientId] ?? [];
+    list.add(newItem);
+    _treatmentPlans[item.patientId] = list;
+    notifyListeners();
+    return newItem;
+  }
+
+  Future<void> updateTreatmentPlanItem(TreatmentPlanItem item) async {
+    final list = _treatmentPlans[item.patientId];
+    if (list != null) {
+      final idx = list.indexWhere((i) => i.id == item.id);
+      if (idx != -1) {
+        list[idx] = item;
+        if (!kIsWeb) {
+          await DatabaseHelper.instance.updateTreatmentPlanItem(item);
+        }
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> deleteTreatmentPlanItem(int patientId, int itemId) async {
+    final list = _treatmentPlans[patientId];
+    if (list != null) {
+      list.removeWhere((i) => i.id == itemId);
+      if (!kIsWeb) {
+        await DatabaseHelper.instance.deleteTreatmentPlanItem(itemId);
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> saveDraftTreatmentPlan(int patientId, List<TreatmentPlanItem> items) async {
+    for (var item in items) {
+      await addTreatmentPlanItem(item.copyWith(patientId: patientId));
+    }
+  }
+
+  // ─── Patient CRUD ───
 
   Future<Patient> addPatient(
     String name,
@@ -81,6 +149,8 @@ class ClinicProvider extends ChangeNotifier {
     }
   }
 
+  // ─── Appointment CRUD ───
+
   Future<Appointment> addAppointment(int patientId, DateTime dateTime, String notes) async {
     Appointment newAppt;
     if (kIsWeb) {
@@ -90,10 +160,7 @@ class ClinicProvider extends ChangeNotifier {
       newAppt = await DatabaseHelper.instance.createAppointment(a);
     }
     appointments.add(newAppt);
-    
-    // Sort appointments chronologically
     appointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-    
     notifyListeners();
     return newAppt;
   }
@@ -120,6 +187,6 @@ class ClinicProvider extends ChangeNotifier {
 
   List<Appointment> getAppointmentsForPatient(int patientId) {
     return appointments.where((a) => a.patientId == patientId).toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // newest first
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
   }
 }

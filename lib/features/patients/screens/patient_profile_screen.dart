@@ -4,15 +4,39 @@ import 'package:intl/intl.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
 import '../../../core/models/appointment.dart';
+import '../../../core/models/treatment_plan_item.dart';
 import '../../dashboard/providers/clinic_provider.dart';
 import '../../odontogram/screens/charting_screen.dart';
+import '../../treatment_plan/screens/treatment_plan_screen.dart';
 import '../../../core/utils/pdf_generator.dart';
 import '../../dashboard/providers/settings_provider.dart';
 
-class PatientProfileScreen extends StatelessWidget {
+class PatientProfileScreen extends StatefulWidget {
   final Patient patient;
 
   const PatientProfileScreen({Key? key, required this.patient}) : super(key: key);
+
+  @override
+  State<PatientProfileScreen> createState() => _PatientProfileScreenState();
+}
+
+class _PatientProfileScreenState extends State<PatientProfileScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ClinicProvider>(context, listen: false).loadTreatmentPlan(widget.patient.id!);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   void _showPastAppointmentDetails(BuildContext context, Appointment appointment) {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
@@ -70,7 +94,7 @@ class PatientProfileScreen extends StatelessWidget {
             label: Text(settings.translate('Print Prescription')),
             onPressed: () {
               Navigator.pop(context);
-              PdfGenerator.printPrescription(patient: patient, appointment: appointment, settings: settings);
+              PdfGenerator.printPrescription(patient: widget.patient, appointment: appointment, settings: settings);
             },
           ),
           ElevatedButton(
@@ -102,8 +126,25 @@ class PatientProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${settings.translate("Patient Profile")}: ${patient.name}'),
+        title: Text('${settings.translate("Patient Profile")}: ${widget.patient.name}'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppTheme.primaryBlue,
+              ),
+              icon: const Icon(Icons.list_alt),
+              label: Text(settings.translate('Full Treatment Roadmap')),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => TreatmentPlanScreen(patient: widget.patient)),
+                );
+              },
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: ElevatedButton.icon(
@@ -114,7 +155,7 @@ class PatientProfileScreen extends StatelessWidget {
               icon: const Icon(Icons.add_chart),
               label: Text(settings.translate('Open Chart')),
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => ChartingScreen(patient: patient)));
+                Navigator.push(context, MaterialPageRoute(builder: (_) => ChartingScreen(patient: widget.patient)));
               },
             ),
           )
@@ -122,12 +163,13 @@ class PatientProfileScreen extends StatelessWidget {
       ),
       body: Consumer<ClinicProvider>(
         builder: (context, provider, child) {
-          final history = provider.getAppointmentsForPatient(patient.id!);
+          final history = provider.getAppointmentsForPatient(widget.patient.id!);
+          final treatmentPlan = provider.getTreatmentPlan(widget.patient.id!);
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left Column: Demographics
+              // Left Column: Demographics & Quick Actions
               Expanded(
                 flex: 1,
                 child: Container(
@@ -142,21 +184,38 @@ class PatientProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        patient.name,
+                        widget.patient.name,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '${settings.translate("Registered")}: ${DateFormat('MMM d, yyyy').format(patient.createdAt)}',
+                        '${settings.translate("Registered")}: ${DateFormat('MMM d, yyyy').format(widget.patient.createdAt)}',
                         style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryBlue,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                        icon: const Icon(Icons.assignment_turned_in),
+                        label: Text(settings.translate('Open Treatment Plan')),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => TreatmentPlanScreen(patient: widget.patient)),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
                       const Divider(color: AppTheme.borderLight),
                       const SizedBox(height: 16),
-                      _buildDemoRow(Icons.cake, settings.translate('Age'), '${patient.age} years old'),
-                      _buildDemoRow(Icons.wc, settings.translate('Gender'), settings.translate(patient.gender)),
-                      _buildDemoRow(Icons.medical_information, settings.translate('Patient ID'), '#${patient.id.toString().padLeft(4, '0')}'),
+                      _buildDemoRow(Icons.cake, settings.translate('Age'), '${widget.patient.age} years old'),
+                      _buildDemoRow(Icons.wc, settings.translate('Gender'), settings.translate(widget.patient.gender)),
+                      _buildDemoRow(Icons.phone, settings.translate('Phone'), widget.patient.phone.isNotEmpty ? widget.patient.phone : settings.translate('N/A')),
+                      _buildDemoRow(Icons.medical_information, settings.translate('Patient ID'), '#${widget.patient.id.toString().padLeft(4, '0')}'),
                     ],
                   ),
                 ),
@@ -164,118 +223,44 @@ class PatientProfileScreen extends StatelessWidget {
 
               const VerticalDivider(width: 1, color: AppTheme.borderLight),
 
-              // Right Column: History
+              // Right Column: Tabs (Treatment Plan Roadmap vs Appointment History)
               Expanded(
                 flex: 2,
                 child: Padding(
-                  padding: const EdgeInsets.all(32.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        settings.translate('Appointment History'),
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.primaryBlue),
+                      TabBar(
+                        controller: _tabController,
+                        labelColor: AppTheme.primaryBlue,
+                        unselectedLabelColor: AppTheme.textSecondary,
+                        indicatorColor: AppTheme.primaryBlue,
+                        indicatorWeight: 3,
+                        tabs: [
+                          Tab(
+                            icon: const Icon(Icons.assignment_outlined),
+                            text: '${settings.translate("Treatment Plan")} (${treatmentPlan.length})',
+                          ),
+                          Tab(
+                            icon: const Icon(Icons.history),
+                            text: '${settings.translate("Appointment History")} (${history.length})',
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                      if (history.isEmpty)
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              settings.translate('No past appointments found.'),
-                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
-                            ),
-                          ),
-                        )
-                      else
-                        Expanded(
-                          child: ListView.separated(
-                            itemCount: history.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 16),
-                            itemBuilder: (context, index) {
-                              final appt = history[index];
-                              return Card(
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () => _showPastAppointmentDetails(context, appt),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.primaryBlue.withOpacity(0.08),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Text(
-                                                DateFormat('MMM').format(appt.dateTime).toUpperCase(),
-                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
-                                              ),
-                                              Text(
-                                                DateFormat('d').format(appt.dateTime),
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppTheme.primaryBlue),
-                                              ),
-                                              Text(
-                                                DateFormat('yyyy').format(appt.dateTime),
-                                                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 20),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                appt.notes.isNotEmpty ? appt.notes : settings.translate('General Checkup'),
-                                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                '${settings.translate("Work Performed")}: ${appt.workPerformed.isNotEmpty ? appt.workPerformed : settings.translate("None recorded")}',
-                                                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: appt.status == 'Completed' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                settings.translate(appt.status),
-                                                style: TextStyle(
-                                                  color: appt.status == 'Completed' ? Colors.green.shade700 : Colors.orange.shade800,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              settings.translate('View Details >'),
-                                              style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12),
-                                            ),
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            // TAB 1: Treatment Plan Items View
+                            _buildTreatmentPlanTab(context, treatmentPlan, settings),
+
+                            // TAB 2: Appointment History View
+                            _buildHistoryTab(context, history, settings),
+                          ],
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -284,6 +269,169 @@ class PatientProfileScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildTreatmentPlanTab(BuildContext context, List<TreatmentPlanItem> items, SettingsProvider settings) {
+    if (items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.assignment_outlined, size: 54, color: AppTheme.textSecondary),
+            const SizedBox(height: 12),
+            Text(
+              settings.translate('No active treatment plan items.'),
+              style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add_chart),
+              label: Text(settings.translate('Open Odontogram to Diagnose')),
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => ChartingScreen(patient: widget.patient)));
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: items.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Card(
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: item.statusColor.withOpacity(0.1),
+              child: Icon(item.statusIcon, color: item.statusColor, size: 20),
+            ),
+            title: Text(
+              item.procedureName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Text('Tooth: ${item.palmerDisplay} • ${item.statusDisplay}'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '\$${item.estimatedFee.toStringAsFixed(0)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryBlue),
+                ),
+                const SizedBox(width: 12),
+                const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+              ],
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TreatmentPlanScreen(patient: widget.patient)),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoryTab(BuildContext context, List<Appointment> history, SettingsProvider settings) {
+    if (history.isEmpty) {
+      return Center(
+        child: Text(
+          settings.translate('No past appointments found.'),
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: history.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final appt = history[index];
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _showPastAppointmentDetails(context, appt),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          DateFormat('MMM').format(appt.dateTime).toUpperCase(),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
+                        ),
+                        Text(
+                          DateFormat('d').format(appt.dateTime),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppTheme.primaryBlue),
+                        ),
+                        Text(
+                          DateFormat('yyyy').format(appt.dateTime),
+                          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          appt.notes.isNotEmpty ? appt.notes : settings.translate('General Checkup'),
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${settings.translate("Work Performed")}: ${appt.workPerformed.isNotEmpty ? appt.workPerformed : settings.translate("None recorded")}',
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: appt.status == 'Completed' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          settings.translate(appt.status),
+                          style: TextStyle(
+                            color: appt.status == 'Completed' ? Colors.green.shade700 : Colors.orange.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        settings.translate('View Details >'),
+                        style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
