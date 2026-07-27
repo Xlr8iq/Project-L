@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme.dart';
 import '../../../../core/models/procedure_setting.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../dashboard/providers/clinic_provider.dart';
 import '../../../dashboard/providers/settings_provider.dart';
 
@@ -10,73 +12,84 @@ class ProceduresSettingsScreen extends StatelessWidget {
 
   void _showProcedureDialog(BuildContext context, [ProcedureSetting? proc]) {
     final nameCtrl = TextEditingController(text: proc?.name ?? '');
-    final feeCtrl = TextEditingController(text: proc != null ? proc.defaultFee.toStringAsFixed(0) : '50');
+    final feeCtrl = TextEditingController(text: proc != null ? ThousandsSeparatorInputFormatter.format(proc.defaultFee) : '50');
     final visitsCtrl = TextEditingController(text: proc != null ? proc.defaultVisits.toString() : '1');
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(proc == null ? 'Add Clinical Procedure' : 'Edit Procedure Settings'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Procedure Name *', prefixIcon: Icon(Icons.medical_services)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: feeCtrl,
-                decoration: const InputDecoration(labelText: 'Default Fee *', prefixIcon: Icon(Icons.attach_money)),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: visitsCtrl,
-                decoration: const InputDecoration(labelText: 'Default Planned Visits', prefixIcon: Icon(Icons.repeat)),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameCtrl.text.trim().isEmpty) return;
-              final fee = double.tryParse(feeCtrl.text.trim()) ?? 50.0;
-              final visits = int.tryParse(visitsCtrl.text.trim()) ?? 1;
-
-              final clinic = Provider.of<ClinicProvider>(context, listen: false);
-              final settings = Provider.of<SettingsProvider>(context, listen: false);
-
-              if (proc == null) {
-                await clinic.addProcedureSetting(
-                  ProcedureSetting(
-                    name: nameCtrl.text.trim(),
-                    defaultFee: fee,
-                    currency: settings.currency,
-                    defaultVisits: visits,
+      builder: (dialogContext) {
+        final settings = Provider.of<SettingsProvider>(dialogContext, listen: false);
+        return AlertDialog(
+          title: Text(proc == null ? 'Add Clinical Procedure' : 'Edit Procedure Settings'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Procedure Name *', prefixIcon: Icon(Icons.medical_services)),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: feeCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Default Fee *',
+                    suffixText: settings.currencySuffix,
+                    prefixIcon: const Icon(Icons.attach_money),
                   ),
-                );
-              } else {
-                await clinic.updateProcedureSetting(
-                  proc.copyWith(
-                    name: nameCtrl.text.trim(),
-                    defaultFee: fee,
-                    currency: settings.currency,
-                    defaultVisits: visits,
-                  ),
-                );
-              }
-              if (!context.mounted) return;
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    ThousandsSeparatorInputFormatter(),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: visitsCtrl,
+                  decoration: const InputDecoration(labelText: 'Default Planned Visits', prefixIcon: Icon(Icons.repeat)),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                final fee = ThousandsSeparatorInputFormatter.parse(feeCtrl.text.trim());
+                final visits = int.tryParse(visitsCtrl.text.trim()) ?? 1;
+
+                final clinic = Provider.of<ClinicProvider>(context, listen: false);
+
+                if (proc == null) {
+                  await clinic.addProcedureSetting(
+                    ProcedureSetting(
+                      name: nameCtrl.text.trim(),
+                      defaultFee: fee,
+                      currency: settings.currency,
+                      defaultVisits: visits,
+                    ),
+                  );
+                } else {
+                  await clinic.updateProcedureSetting(
+                    proc.copyWith(
+                      name: nameCtrl.text.trim(),
+                      defaultFee: fee,
+                      currency: settings.currency,
+                      defaultVisits: visits,
+                    ),
+                  );
+                }
+                if (!context.mounted) return;
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 

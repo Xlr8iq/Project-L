@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
 import '../../../core/models/appointment.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../dashboard/providers/clinic_provider.dart';
 import '../../dashboard/providers/settings_provider.dart';
 
@@ -512,6 +514,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                                   prefixIcon: Icon(Icons.numbers),
                                 ),
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                 validator: (val) {
                                   if (val == null || val.trim().isEmpty) return 'Required';
                                   if (int.tryParse(val.trim()) == null) return 'Numeric only';
@@ -735,20 +738,25 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                             children: [
                               Expanded(
                                 child: TextFormField(
-                                  initialValue: _consultationFee.toStringAsFixed(0),
+                                  initialValue: ThousandsSeparatorInputFormatter.format(_consultationFee),
                                   decoration: InputDecoration(
-                                    labelText: 'Consultation Fee (${settings.currencySymbol}) *',
+                                    labelText: 'Consultation Fee *',
+                                    suffixText: settings.currencySuffix,
                                     prefixIcon: const Icon(Icons.attach_money),
                                   ),
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    ThousandsSeparatorInputFormatter(),
+                                  ],
                                   validator: (val) {
                                     if (!_chargeConsultationFee) return null;
-                                    if (val == null || double.tryParse(val) == null) return 'Required';
+                                    if (val == null || ThousandsSeparatorInputFormatter.parse(val) <= 0) return 'Required';
                                     return null;
                                   },
                                   onChanged: (val) {
                                     setState(() {
-                                      _consultationFee = double.tryParse(val) ?? 0.0;
+                                      _consultationFee = ThousandsSeparatorInputFormatter.parse(val);
                                     });
                                   },
                                 ),
@@ -756,22 +764,26 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: TextFormField(
-                                  initialValue: _paidToday.toStringAsFixed(0),
+                                  initialValue: ThousandsSeparatorInputFormatter.format(_paidToday),
                                   decoration: InputDecoration(
-                                    labelText: 'Paid Today (${settings.currencySymbol}) *',
+                                    labelText: 'Paid Today *',
+                                    suffixText: settings.currencySuffix,
                                     prefixIcon: const Icon(Icons.price_check),
                                   ),
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    ThousandsSeparatorInputFormatter(),
+                                  ],
                                   validator: (val) {
                                     if (!_chargeConsultationFee) return null;
-                                    final paid = double.tryParse(val ?? '');
-                                    if (paid == null) return 'Required';
+                                    final paid = ThousandsSeparatorInputFormatter.parse(val ?? '');
                                     if (paid > _consultationFee) return 'Exceeds Fee';
                                     return null;
                                   },
                                   onChanged: (val) {
                                     setState(() {
-                                      _paidToday = double.tryParse(val) ?? 0.0;
+                                      _paidToday = ThousandsSeparatorInputFormatter.parse(val);
                                     });
                                   },
                                 ),

@@ -108,17 +108,25 @@ class OdontogramProvider extends ChangeNotifier {
         // Save tooth overlay to teeth_chart table
         await DatabaseHelper.instance.saveToothProcedure(patientId!, _teeth[toothNum]!);
 
-        // Default total visits based on procedure type
         int visits = 1;
-        if (proc == ProcedureType.endo) visits = 3; // RCT usually multi-visit
-        if (proc == ProcedureType.crown || proc == ProcedureType.bridge) visits = 2;
-        if (proc == ProcedureType.implant) visits = 3;
-
         double fee = 50.0;
-        if (proc == ProcedureType.endo) fee = 180.0;
-        if (proc == ProcedureType.crown) fee = 250.0;
-        if (proc == ProcedureType.implant) fee = 400.0;
-        if (proc == ProcedureType.extraction) fee = 70.0;
+
+        // Dynamic lookup from clinic procedures database settings
+        final procName = Tooth(number: toothNum, procedure: proc).procedureName;
+        final matchedSetting = clinicProvider.procedures.where((p) =>
+          p.name.toLowerCase().contains(procName.toLowerCase()) ||
+          procName.toLowerCase().contains(p.name.toLowerCase())
+        ).toList();
+
+        if (matchedSetting.isNotEmpty) {
+          fee = matchedSetting.first.defaultFee;
+          visits = matchedSetting.first.defaultVisits;
+        } else {
+          if (proc == ProcedureType.endo) { visits = 3; fee = 180.0; }
+          if (proc == ProcedureType.crown) { visits = 2; fee = 250.0; }
+          if (proc == ProcedureType.implant) { visits = 3; fee = 400.0; }
+          if (proc == ProcedureType.extraction) { visits = 1; fee = 70.0; }
+        }
 
         final item = TreatmentPlanItem(
           patientId: patientId!,

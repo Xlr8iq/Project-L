@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import '../../../core/services/settings_service.dart';
 import '../../../core/localization/translations.dart';
 
@@ -39,15 +40,23 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   String get currencySymbol {
-    if (currency == 'IQD') return 'ع.د';
+    if (currency == 'IQD') return 'IQD';
+    return 'USD (\$)';
+  }
+
+  String get currencySuffix {
+    if (currency == 'IQD') return 'IQD';
     return '\$';
   }
 
-  String formatCurrency(double amount) {
+  String formatCurrency(double amount, {bool showSymbol = true}) {
+    final formatter = NumberFormat('#,##0', 'en_US');
+    final formattedNum = formatter.format(amount.round());
+    if (!showSymbol) return formattedNum;
     if (currency == 'IQD') {
-      return '${amount.toStringAsFixed(0)} ع.د';
+      return '$formattedNum IQD';
     }
-    return '\$${amount.toStringAsFixed(2)}';
+    return '\$$formattedNum';
   }
 
   String translate(String key) {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../core/models/patient.dart';
 import '../../../core/models/tooth.dart';
 import '../../../core/models/treatment_plan_item.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../dashboard/providers/clinic_provider.dart';
 import '../../dashboard/providers/settings_provider.dart';
 
@@ -266,25 +268,35 @@ class _ProcedureExecutionDialogState extends State<ProcedureExecutionDialog> {
                 children: [
                   Expanded(
                     child: TextFormField(
-                      initialValue: _estimatedFee.toStringAsFixed(0),
+                      initialValue: ThousandsSeparatorInputFormatter.format(_estimatedFee),
                       decoration: InputDecoration(
-                        labelText: '${settings.translate("Estimated Fee")} (${settings.currencySymbol})',
+                        labelText: settings.translate('Estimated Fee'),
+                        suffixText: settings.currencySuffix,
                         prefixIcon: const Icon(Icons.attach_money),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      onChanged: (v) => setState(() => _estimatedFee = double.tryParse(v) ?? 0.0),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        ThousandsSeparatorInputFormatter(),
+                      ],
+                      onChanged: (v) => setState(() => _estimatedFee = ThousandsSeparatorInputFormatter.parse(v)),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
-                      initialValue: _paidAmount.toStringAsFixed(0),
+                      initialValue: ThousandsSeparatorInputFormatter.format(_paidAmount),
                       decoration: InputDecoration(
-                        labelText: '${settings.translate("Paid Amount")} (${settings.currencySymbol})',
+                        labelText: settings.translate('Paid Amount'),
+                        suffixText: settings.currencySuffix,
                         prefixIcon: const Icon(Icons.price_check),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      onChanged: (v) => setState(() => _paidAmount = double.tryParse(v) ?? 0.0),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        ThousandsSeparatorInputFormatter(),
+                      ],
+                      onChanged: (v) => setState(() => _paidAmount = ThousandsSeparatorInputFormatter.parse(v)),
                     ),
                   ),
                 ],

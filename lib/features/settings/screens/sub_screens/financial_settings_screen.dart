@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../dashboard/providers/settings_provider.dart';
 
 class FinancialSettingsScreen extends StatefulWidget {
@@ -26,7 +28,7 @@ class _FinancialSettingsScreenState extends State<FinancialSettingsScreen> {
   void initState() {
     super.initState();
     final provider = Provider.of<SettingsProvider>(context, listen: false);
-    _consultationFeeController = TextEditingController(text: provider.defaultConsultationFee.toStringAsFixed(0));
+    _consultationFeeController = TextEditingController(text: ThousandsSeparatorInputFormatter.format(provider.defaultConsultationFee));
     _enabledMethods = List<String>.from(provider.enabledPaymentMethods);
   }
 
@@ -38,7 +40,7 @@ class _FinancialSettingsScreenState extends State<FinancialSettingsScreen> {
 
   void _saveFinancialSettings() {
     final provider = Provider.of<SettingsProvider>(context, listen: false);
-    final fee = double.tryParse(_consultationFeeController.text.trim()) ?? 25.0;
+    final fee = ThousandsSeparatorInputFormatter.parse(_consultationFeeController.text.trim());
 
     provider.updateSettings({
       'default_consultation_fee': fee,
@@ -91,9 +93,13 @@ class _FinancialSettingsScreenState extends State<FinancialSettingsScreen> {
                       decoration: InputDecoration(
                         labelText: provider.translate('Default Consultation Fee'),
                         prefixIcon: const Icon(Icons.attach_money),
-                        suffixText: provider.currencySymbol,
+                        suffixText: provider.currencySuffix,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        ThousandsSeparatorInputFormatter(),
+                      ],
                     ),
 
                     const SizedBox(height: 28),
